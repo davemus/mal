@@ -1,3 +1,6 @@
+import mal_readline
+
+
 def READ(arg):
     return arg
 
