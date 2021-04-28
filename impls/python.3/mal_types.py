@@ -17,6 +17,9 @@ make_hashmap = lambda iterable: dict(zip(iterable[0::2], iterable[1::2]))
 make_hashmap_from_pydict = lambda x: x
 is_hashmap = lambda entity: isinstance(entity, dict)
 
+NIL = 'nil'
+is_nil = lambda entity: entity == NIL
+
 
 def items(entity):
     if is_hashmap(entity):
@@ -36,4 +39,20 @@ def is_empty(entity):
 def iterate(entity):
     if is_iterable(entity):
         return entity
+    raise TypeError
+
+
+def first(entity):
+    if is_iterable(entity):
+        if entity:
+            return entity[0]
+        return NIL
+    raise TypeError
+
+
+def rest(entity):
+    if is_iterable(entity):
+        if entity:
+            return list(entity[1:])
+        return []
     raise TypeError

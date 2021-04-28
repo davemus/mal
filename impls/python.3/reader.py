@@ -17,7 +17,7 @@ class Reader:
 
     def _check_position(self):
         if self._position >= len(self._tokens):
-            raise StopIteration
+            raise StopIteration('Input/output error')
 
     def peek(self):
         self._check_position()
@@ -100,8 +100,8 @@ def read_atom(reader):
     elif token.startswith('"'):
         # this makes tests pass, but is not a real solution. Example: "\\"
         if not token.endswith('"') or token.endswith(r'\"') or len(token) == 1:
-            raise RuntimeError
+            raise RuntimeError('Input/output error')
         return make_string(token)
     elif re.match(r'.*', token):
         return make_symbol(token)
-    raise RuntimeError
+    raise RuntimeError('Input/output error')
