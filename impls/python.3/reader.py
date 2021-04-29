@@ -6,6 +6,9 @@ from mal_types import (
     make_list,
     make_vector,
     make_hashmap,
+    NIL,
+    TRUE,
+    FALSE,
 )
 
 
@@ -95,7 +98,13 @@ def read_list(reader, sequential):
 
 def read_atom(reader):
     token = reader.next().strip()
-    if re.match(r'-?\d+\.*\d*', token):
+    if token == 'nil':
+        return NIL
+    elif token == 'true':
+        return TRUE
+    elif token == 'false':
+        return FALSE
+    elif re.match(r'-?\d+\.*\d*', token):
         return make_number(token)
     elif token.startswith('"'):
         # this makes tests pass, but is not a real solution. Example: "\\"

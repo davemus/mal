@@ -17,8 +17,17 @@ make_hashmap = lambda iterable: dict(zip(iterable[0::2], iterable[1::2]))
 make_hashmap_from_pydict = lambda x: x
 is_hashmap = lambda entity: isinstance(entity, dict)
 
-NIL = 'nil'
-is_nil = lambda entity: entity == NIL
+NIL = None
+is_nil = lambda entity: entity is NIL
+
+TRUE = True
+FALSE = False
+is_bool = lambda entity: isinstance(entity, bool)
+
+is_function = lambda entity: callable(entity)
+
+make_string = str
+is_string = lambda entity: isinstance(entity, str)
 
 
 def items(entity):
@@ -55,4 +64,10 @@ def rest(entity):
         if entity:
             return list(entity[1:])
         return []
+    raise TypeError
+
+
+def count(entity):
+    if is_iterable(entity):
+        return len(entity)
     raise TypeError
