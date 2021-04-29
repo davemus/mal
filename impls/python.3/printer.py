@@ -1,6 +1,9 @@
 from mal_types import (
     is_number,
     is_symbol,
+    is_string,
+    is_keyword,
+    is_function,
     is_list,
     is_vector,
     is_hashmap,
@@ -25,7 +28,13 @@ def pr_str(entity, print_readably=True):
     elif is_number(entity):
         return str(entity)
     elif is_symbol(entity):
-        return str(entity)
+        return entity
+    elif is_string(entity):
+        if print_readably:
+            return entity
+        return entity[1:-1].encode().decode('unicode-escape')
+    elif is_keyword(entity):
+        return entity[1:]
     elif is_list(entity):
         return '(' + ' '.join(pr_str(inner) for inner in entity) + ')'
     elif is_vector(entity):

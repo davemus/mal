@@ -6,7 +6,7 @@ from mal_types import (
     is_hashmap, make_hashmap_from_pydict, items,
     is_list, make_list, is_empty,
     is_symbol, make_symbol,
-    first, rest
+    first, rest, FALSE, is_nil, is_bool
 )
 from env import Env
 from core import namespace
@@ -73,9 +73,9 @@ def EVAL(ast, env):
             op, mal_condition, true_branch, false_branch = ast
         except ValueError:
             raise RuntimeError('if syntax is (if /condition/ /true_branch/ /false_branch/)')  # noqa
-        print(ast)
         condition = EVAL(mal_condition, env)
-        if not condition:
+        # empty lists, strings and 0 are 'truthy'
+        if is_nil(condition) or is_bool(condition) and condition == FALSE:
             return EVAL(false_branch, env)
         return EVAL(true_branch, env)
     elif first(ast) == make_symbol('fn*'):

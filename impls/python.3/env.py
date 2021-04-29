@@ -15,11 +15,11 @@ class Env:
             and VARIADIC_ASSIGNMENT_SYMBOL not in binds
         ):
             raise ValueError
-        for counter in range(len(exprs)):
-            if binds[counter] == VARIADIC_ASSIGNMENT_SYMBOL:
-                self.set(binds[counter + 1], make_list(exprs[counter:]))
+        for idx, elem in enumerate(binds):
+            if elem == VARIADIC_ASSIGNMENT_SYMBOL:
+                self.set(binds[idx + 1], make_list(exprs[idx:]))
                 return
-            self.set(binds[counter], exprs[counter])
+            self.set(elem, exprs[idx])
 
     def set(self, name, value):
         self._scope[name] = value

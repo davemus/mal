@@ -1,11 +1,13 @@
 # atomic types
 make_number = lambda str_: float(str_) if float(str_) != int(str_) else int(str_)
 is_number = lambda entity: isinstance(entity, (int, float))
-make_symbol = lambda str_: str(str_)
-# TODO: add way to distinguish symbol and string
-is_symbol = lambda entity: isinstance(entity, str)
+
 make_string = str
-is_string = lambda entity: isinstance(entity, str)
+is_string = lambda entity: isinstance(entity, str) and entity.startswith('"')
+make_keyword = lambda str_: u"\u029e" + str(str_)
+is_keyword = lambda entity: isinstance(entity, str) and entity.startswith(u"\u029e")
+make_symbol = str
+is_symbol = lambda entity: isinstance(entity, str) and not any([is_string(entity), is_keyword(entity)])
 
 # compound types
 make_list = list
@@ -25,9 +27,6 @@ FALSE = False
 is_bool = lambda entity: isinstance(entity, bool)
 
 is_function = lambda entity: callable(entity)
-
-make_string = str
-is_string = lambda entity: isinstance(entity, str)
 
 
 def items(entity):
@@ -52,22 +51,18 @@ def iterate(entity):
 
 
 def first(entity):
-    if is_iterable(entity):
-        if entity:
-            return entity[0]
-        return NIL
-    raise TypeError
+    if is_iterable(entity) and entity:
+        return entity[0]
+    return NIL
 
 
 def rest(entity):
-    if is_iterable(entity):
-        if entity:
-            return list(entity[1:])
-        return []
-    raise TypeError
+    if is_iterable(entity) and entity:
+        return list(entity[1:])
+    return []
 
 
 def count(entity):
     if is_iterable(entity):
         return len(entity)
-    raise TypeError
+    return 0

@@ -6,6 +6,7 @@ from mal_types import (
     make_list,
     make_vector,
     make_hashmap,
+    make_keyword,
     NIL,
     TRUE,
     FALSE,
@@ -39,7 +40,7 @@ def read_str(arg):
     try:
         return read_form(reader)
     except (StopIteration, RuntimeError):
-        return 'unbalanced input'
+        raise RuntimeError('unbalanced input')
 
 
 def tokenize(arg):
@@ -111,6 +112,8 @@ def read_atom(reader):
         if not token.endswith('"') or token.endswith(r'\"') or len(token) == 1:
             raise RuntimeError('Input/output error')
         return make_string(token)
+    elif token.startswith(':'):
+        return make_keyword(token)
     elif re.match(r'.*', token):
         return make_symbol(token)
     raise RuntimeError('Input/output error')
