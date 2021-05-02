@@ -4,14 +4,17 @@ is_number = lambda entity: isinstance(entity, (int, float))
 
 make_string = str
 is_string = lambda entity: isinstance(entity, str) and entity.startswith('"')
+
 make_keyword = lambda str_: u"\u029e" + str(str_)
 is_keyword = lambda entity: isinstance(entity, str) and entity.startswith(u"\u029e")
+
 make_symbol = str
 is_symbol = lambda entity: isinstance(entity, str) and not any([is_string(entity), is_keyword(entity)])
 
 # compound types
 make_list = list
 is_list = lambda entity: isinstance(entity, list)
+
 make_vector = tuple
 is_vector = lambda entity: isinstance(entity, tuple)
 

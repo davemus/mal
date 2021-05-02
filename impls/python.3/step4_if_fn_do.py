@@ -69,12 +69,12 @@ def EVAL(ast, env):
             new_env.set(symb, EVAL(value, new_env))
         return EVAL(instructions, new_env)
     elif first(ast) == make_symbol('if'):
-        try:
-            op, mal_condition, true_branch, false_branch = ast
-        except ValueError:
-            raise RuntimeError('if syntax is (if /condition/ /true_branch/ /false_branch/)')  # noqa
-        condition = EVAL(mal_condition, env)
-        # empty lists, strings and 0 are 'truthy'
+        elements = rest(ast)
+        condition = first(elements)
+        true_branch = first(rest(elements))
+        false_branch = first(rest(rest(elements)))
+        condition = EVAL(condition, env)
+        # empty lists, strings and 0 are 'truthy', only false and nil are 'falsy'
         if is_nil(condition) or is_bool(condition) and condition == FALSE:
             return EVAL(false_branch, env)
         return EVAL(true_branch, env)

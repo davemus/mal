@@ -22,5 +22,8 @@ def rep(arg):
 if __name__ == '__main__':
     while True:
         inp = input('user> \n')
-        res = rep(inp)
-        print(res)
+        try:
+            res = rep(inp)
+            print(res)
+        except Exception as e:
+            print(e)

@@ -11,7 +11,6 @@ from mal_types import (
     is_bool,
     TRUE,
     FALSE,
-    is_function,
 )
 
 
@@ -32,17 +31,17 @@ def pr_str(entity, print_readably=True):
     elif is_string(entity):
         if print_readably:
             return entity
-        return entity[1:-1].encode().decode('unicode-escape')
+        return entity.replace(r'\"', r'"').replace(r'\n', '\n')[1:-1]
     elif is_keyword(entity):
         return entity[1:]
     elif is_list(entity):
-        return '(' + ' '.join(pr_str(inner) for inner in entity) + ')'
+        return '(' + ' '.join(pr_str(inner, print_readably) for inner in entity) + ')'
     elif is_vector(entity):
-        return '[' + ' '.join(pr_str(inner) for inner in entity) + ']'
+        return '[' + ' '.join(pr_str(inner, print_readably) for inner in entity) + ']'
     elif is_hashmap(entity):
         return (
             '{'
-            + ' '.join(f'{pr_str(k)} {pr_str(v)}' for k, v in entity.items())
+            + ' '.join(f'{pr_str(k, print_readably)} {pr_str(v, print_readably)}' for k, v in entity.items())
             + '}'
         )
     raise RuntimeError(f'pr_str: unknown type {type(entity)}')

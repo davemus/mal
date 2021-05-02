@@ -25,7 +25,7 @@ class Reader:
 
     def peek(self):
         self._check_position()
-        return self._tokens[self._position].strip()
+        return self._tokens[self._position]
 
     def next(self):
         self._check_position()
@@ -109,9 +109,9 @@ def read_atom(reader):
         return make_number(token)
     elif token.startswith('"'):
         # this makes tests pass, but is not a real solution. Example: "\\"
-        if not token.endswith('"') or token.endswith(r'\"') or len(token) == 1:
+        if not token.endswith(r'"') or len(token) == 1:
             raise RuntimeError('Input/output error')
-        return make_string(token)
+        return make_string(token.replace("", ""))
     elif token.startswith(':'):
         return make_keyword(token)
     elif re.match(r'.*', token):

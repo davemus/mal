@@ -9,21 +9,23 @@ from mal_types import (
 
 
 def prn(*args):
-    print(make_string(" ".join(pr_str(arg, True) for arg in args)))
+    print(" ".join(pr_str(arg, True) for arg in args))
     return NIL
 
 
 def println(*args):
-    print(make_string(" ".join(pr_str(arg, False) for arg in args)))
+    print(fr'{" ".join(pr_str(arg, False) for arg in args)}')
     return NIL
 
 
 def pr_str_(*args):
-    return make_string("".join(pr_str(arg, True) for arg in args))
+    string = "".join(pr_str(arg, True) for arg in args)
+    return rf'"{string}"'
 
 
 def str_(*args):
-    return '"' + make_string("".join(pr_str(arg, False) for arg in args)) + '"'
+    string = "".join(pr_str(arg, False) for arg in args)
+    return rf'"{string}"'
 
 
 def equal(op1, op2):
