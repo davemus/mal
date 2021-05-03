@@ -11,7 +11,7 @@ from mal_types import (
     first, rest, nth,
     is_nil, is_true, is_false, make_keyword, is_keyword,
     is_hashmap, keys, values, contains, get,
-    make_hashmap_vargs, assoc, dissoc,
+    make_hashmap_vargs, assoc, dissoc, make_string,
 )
 
 
@@ -54,6 +54,17 @@ def slurp(filename):
     with open(filename) as f:
         contents = ' '.join(strip_comments(line) for line in f if line)
     return contents
+
+
+def mal_readline(prompt):
+    try:
+        return input(prompt)
+    except EOFError:
+        return NIL
+
+
+def stub(*args):
+    raise NotImplementedError()
 
 
 namespace_ = {
@@ -105,6 +116,16 @@ namespace_ = {
     'contains?': contains,
     'assoc': assoc,
     'dissoc': dissoc,
+    'readline': mal_readline,
+    '*host-language*': make_string("\"python-mal\""),
+    'time-ms': stub,
+    'meta': stub,
+    'with-meta': stub,
+    'fn?': stub,
+    'string?': stub,
+    'number?': stub,
+    'seq': stub,
+    'conj': stub,
 }
 
 namespace = {make_symbol(k): v for k, v in namespace_.items()}
