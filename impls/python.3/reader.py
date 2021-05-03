@@ -111,7 +111,7 @@ def read_atom(reader):
         # this makes tests pass, but is not a real solution. Example: "\\"
         if not token.endswith(r'"') or len(token) == 1:
             raise RuntimeError('Input/output error')
-        return make_string(token.replace("", ""))
+        return make_string(token)
     elif token.startswith(':'):
         return make_keyword(token)
     elif re.match(r'.*', token):

@@ -13,10 +13,10 @@ from env import Env
 
 def _setup_repl_env():
     repl_env = Env()
-    repl_env.set('+', lambda a, b: a + b)
-    repl_env.set('-', lambda a, b: a - b)
-    repl_env.set('*', lambda a, b: a * b)
-    repl_env.set('/', lambda a, b: a / b)
+    repl_env.set(make_symbol('+'), lambda a, b: a + b)
+    repl_env.set(make_symbol('-'), lambda a, b: a - b)
+    repl_env.set(make_symbol('*'), lambda a, b: a * b)
+    repl_env.set(make_symbol('/'), lambda a, b: a / b)
     return repl_env
 
 

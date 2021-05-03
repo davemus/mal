@@ -2,14 +2,15 @@
 make_number = lambda str_: float(str_) if float(str_) != int(str_) else int(str_)
 is_number = lambda entity: isinstance(entity, (int, float))
 
-make_string = str
-is_string = lambda entity: isinstance(entity, str) and entity.startswith('"')
+def make_string(str_):
+    return str_[1:-1].replace('\\n', '\n').replace('\\"', '"')
+is_string = lambda entity: isinstance(entity, str)
 
 make_keyword = lambda str_: u"\u029e" + str(str_)
 is_keyword = lambda entity: isinstance(entity, str) and entity.startswith(u"\u029e")
 
-make_symbol = str
-is_symbol = lambda entity: isinstance(entity, str) and not any([is_string(entity), is_keyword(entity)])
+make_symbol = lambda str_: bytes(str_, encoding='utf-8')
+is_symbol = lambda entity: isinstance(entity, bytes)
 
 # compound types
 make_list = list

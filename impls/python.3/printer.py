@@ -27,13 +27,13 @@ def pr_str(entity, print_readably=True):
     elif is_number(entity):
         return str(entity)
     elif is_symbol(entity):
-        return entity
-    elif is_string(entity):
-        if print_readably:
-            return entity
-        return entity.replace(r'\"', r'"').replace(r'\n', '\n')[1:-1]
+        return str(entity, 'utf-8')
     elif is_keyword(entity):
         return entity[1:]
+    elif is_string(entity):
+        if print_readably:
+            return '"' + entity.replace('\n', '\\n').replace('\"', '\\\"') + '"'
+        return entity
     elif is_list(entity):
         return '(' + ' '.join(pr_str(inner, print_readably) for inner in entity) + ')'
     elif is_vector(entity):

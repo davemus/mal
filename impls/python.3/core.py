@@ -4,7 +4,7 @@ from operator import (
 from printer import pr_str
 from mal_types import (
     make_list, is_list, NIL, is_empty, count,
-    is_iterable, make_string
+    is_iterable, make_string, make_symbol
 )
 
 
@@ -14,18 +14,18 @@ def prn(*args):
 
 
 def println(*args):
-    print(fr'{" ".join(pr_str(arg, False) for arg in args)}')
+    print(" ".join(pr_str(arg, False) for arg in args))
     return NIL
 
 
 def pr_str_(*args):
-    string = "".join(pr_str(arg, True) for arg in args)
-    return rf'"{string}"'
+    string = " ".join(pr_str(arg, True) for arg in args)
+    return string
 
 
 def str_(*args):
     string = "".join(pr_str(arg, False) for arg in args)
-    return rf'"{string}"'
+    return string
 
 
 def equal(op1, op2):
@@ -38,7 +38,7 @@ def equal(op1, op2):
     return type(op1) == type(op2) and op1 == op2
 
 
-namespace = {
+namespace_ = {
     '+': add,
     '-': sub,
     '*': mul,
@@ -57,3 +57,5 @@ namespace = {
     'empty?': is_empty,
     'count': count,
 }
+
+namespace = {make_symbol(k): v for k, v in namespace_.items()}
