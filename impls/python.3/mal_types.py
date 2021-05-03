@@ -5,8 +5,6 @@ is_number = lambda entity: isinstance(entity, (int, float))
 def make_string(str_):
     return (
         str_[1:-1]
-        # that hack I saw in impl/python. I was desperate to complete step4
-        # cause I was stopped on it for 5+ days. I have only 7 incomplete tests so far
         .replace('\\\\', u'\u029e')
         .replace('\\n', '\n')
         .replace('\\"', '"')
