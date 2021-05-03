@@ -4,7 +4,7 @@ from collections import namedtuple
 make_number = lambda str_: float(str_) if float(str_) != int(str_) else int(str_)
 is_number = lambda entity: isinstance(entity, (int, float))
 
-def make_string(str_):
+def make_string(str_):  # noqa
     return (
         str_[1:-1]
         .replace('\\\\', u'\u029e')
@@ -12,7 +12,7 @@ def make_string(str_):
         .replace('\\"', '"')
         .replace(u'\u029e', '\\')
     )
-is_string = lambda entity: isinstance(entity, str)
+is_string = lambda entity: isinstance(entity, str)  # noqa
 
 make_keyword = lambda str_: u"\u029e" + str(str_)
 is_keyword = lambda entity: isinstance(entity, str) and entity.startswith(u"\u029e")
@@ -109,3 +109,14 @@ def count(entity):
     if is_iterable(entity):
         return len(entity)
     return 0
+
+
+def cons(element, sequence):
+    return make_list([element, *sequence])
+
+
+def concat(*sequences):
+    joined = []
+    for sequence in sequences:
+        joined += sequence
+    return make_list(joined)

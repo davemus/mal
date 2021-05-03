@@ -1,4 +1,3 @@
-import re
 from operator import (
     add, sub, mul, truediv, lt, le, gt, ge
 )
@@ -6,8 +5,9 @@ from printer import pr_str
 from reader import read_str
 from mal_types import (
     make_list, is_list, NIL, is_empty, count,
-    is_iterable, make_string, make_symbol,
-    make_atom, is_atom, deref, swap, reset
+    is_iterable, make_symbol,
+    make_atom, is_atom, deref, swap, reset,
+    cons, concat
 )
 
 
@@ -73,6 +73,8 @@ namespace_ = {
     'deref': deref,
     'swap!': swap,
     'reset!': reset,
+    'cons': cons,
+    'concat': concat,
 }
 
 namespace = {make_symbol(k): v for k, v in namespace_.items()}
