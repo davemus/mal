@@ -1,10 +1,13 @@
+import re
 from operator import (
     add, sub, mul, truediv, lt, le, gt, ge
 )
 from printer import pr_str
+from reader import read_str
 from mal_types import (
     make_list, is_list, NIL, is_empty, count,
-    is_iterable, make_string, make_symbol
+    is_iterable, make_string, make_symbol,
+    make_atom, is_atom, deref, swap, reset
 )
 
 
@@ -38,6 +41,14 @@ def equal(op1, op2):
     return type(op1) == type(op2) and op1 == op2
 
 
+def slurp(filename):
+    strip_comments = lambda line: line.split(';')[0]
+    with open(filename) as f:
+        contents = ' '.join(strip_comments(line) for line in f if line)
+    print(contents)
+    return contents
+
+
 namespace_ = {
     '+': add,
     '-': sub,
@@ -56,6 +67,13 @@ namespace_ = {
     'str': str_,
     'empty?': is_empty,
     'count': count,
+    'read-string': read_str,
+    'slurp': slurp,
+    'atom': make_atom,
+    'atom?': is_atom,
+    'deref': deref,
+    'swap!': swap,
+    'reset!': reset,
 }
 
 namespace = {make_symbol(k): v for k, v in namespace_.items()}

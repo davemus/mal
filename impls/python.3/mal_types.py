@@ -22,10 +22,10 @@ is_symbol = lambda entity: isinstance(entity, bytes)
 
 # compound types
 make_list = list
-is_list = lambda entity: isinstance(entity, list)
+is_list = lambda entity: isinstance(entity, list) and not is_atom(entity)
 
 make_vector = tuple
-is_vector = lambda entity: isinstance(entity, tuple) and not is_function(entity)
+is_vector = lambda entity: isinstance(entity, tuple) and not isinstance(entity, namedtuple)
 
 make_hashmap = lambda iterable: dict(zip(iterable[0::2], iterable[1::2]))
 make_hashmap_from_pydict = lambda x: x
@@ -42,6 +42,35 @@ function = namedtuple('MalFunction', 'ast params env fn')
 make_function = function
 is_mal_function = lambda entity: isinstance(entity, function)
 is_function = lambda entity: callable(entity) or is_mal_function(entity)
+
+_atom_mark = 'atom'
+atom = lambda value: make_list([_atom_mark, value])
+make_atom = atom
+is_atom = lambda entity: isinstance(entity, list) and len(entity) == 2 and entity[0] == _atom_mark
+
+
+def deref(entity):
+    if is_atom(entity):
+        return entity[1]
+    return NIL
+
+
+def reset(entity, value):
+    if is_atom(entity):
+        entity[1] = value
+        return value
+    return NIL
+
+
+def swap(entity, fn, *args):
+    if not is_atom(entity):
+        raise TypeError('swap! first argument should be atom')
+    if is_mal_function(fn):
+        fn = fn.fn
+    new_value = fn(entity[1], *args)
+    entity[1] = new_value
+    return new_value
+
 
 def items(entity):
     if is_hashmap(entity):

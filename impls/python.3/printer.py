@@ -7,6 +7,8 @@ from mal_types import (
     is_list,
     is_vector,
     is_hashmap,
+    is_atom,
+    deref,
     is_nil,
     is_bool,
     TRUE,
@@ -34,6 +36,8 @@ def pr_str(entity, print_readably=True):
         if print_readably:
             return '"' + entity.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n') + '"'
         return entity
+    elif is_atom(entity):
+        return f'(atom {deref(entity)})'
     elif is_list(entity):
         return '(' + ' '.join(pr_str(inner, print_readably) for inner in entity) + ')'
     elif is_vector(entity):

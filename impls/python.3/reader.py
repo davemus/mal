@@ -98,7 +98,7 @@ def read_list(reader, sequential):
 
 
 def read_atom(reader):
-    token = reader.next().strip()
+    token = reader.next()
     if token == 'nil':
         return NIL
     elif token == 'true':
