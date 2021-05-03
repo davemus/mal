@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 # atomic types
 make_number = lambda str_: float(str_) if float(str_) != int(str_) else int(str_)
 is_number = lambda entity: isinstance(entity, (int, float))
@@ -23,7 +25,7 @@ make_list = list
 is_list = lambda entity: isinstance(entity, list)
 
 make_vector = tuple
-is_vector = lambda entity: isinstance(entity, tuple)
+is_vector = lambda entity: isinstance(entity, tuple) and not is_function(entity)
 
 make_hashmap = lambda iterable: dict(zip(iterable[0::2], iterable[1::2]))
 make_hashmap_from_pydict = lambda x: x
@@ -36,8 +38,10 @@ TRUE = True
 FALSE = False
 is_bool = lambda entity: isinstance(entity, bool)
 
-is_function = lambda entity: callable(entity)
-
+function = namedtuple('MalFunction', 'ast params env fn')
+make_function = function
+is_mal_function = lambda entity: isinstance(entity, function)
+is_function = lambda entity: callable(entity) or is_mal_function(entity)
 
 def items(entity):
     if is_hashmap(entity):
