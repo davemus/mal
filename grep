@@ -1,0 +1,719 @@
+make -C impls/python.3 step9_try.py
+make[1]: Entering directory '/home/davemus/Code/mal/impls/python.3'
+make[1]: Nothing to be done for 'step9_try.py'.
+make[1]: Leaving directory '/home/davemus/Code/mal/impls/python.3'
+(call STEP_TEST_FILES,python.3,step9): impls/tests/step9_try.mal
+----------------------------------------------
+Testing test^python.3^step9; step file: impls/python.3/step9_try.py, test file: tests/step9_try.mal
+Running: env STEP=step9_try MAL_IMPL=js ../../runtest.py  --deferrable --optional   ../tests/step9_try.mal -- ../python.3/run
+
+Testing throw
+TEST: '(throw "err1")' -> ['.*([Ee][Rr][Rr][Oo][Rr]|[Ee]xception).*err1.*',] -> FAIL (line 5):
+    Expected : '.*\n.*([Ee][Rr][Rr][Oo][Rr]|[Ee]xception).*err1.*'
+    Got      : '(throw "err1")\n\'throw\' not found'
+
+Testing try*/catch*
+TEST: '(try* 123 (catch* e 456))' -> ['',123] -> SUCCESS
+TEST: '(try* abc (catch* exc (prn "exc is:" exc)))' -> ['"exc is:" "\'abc\' not found"\n',nil] -> FAIL (line 15):
+    Expected : '.*\n"exc is:" "\'abc\' not found"\nnil'
+    Got      : '(try* abc (catch* exc (prn "exc is:" exc)))\npr_str: unknown type <class \'RuntimeError\'>'
+TEST: '(try* (abc 1 2) (catch* exc (prn "exc is:" exc)))' -> ['"exc is:" "\'abc\' not found"\n',nil] -> FAIL (line 19):
+    Expected : '.*\n"exc is:" "\'abc\' not found"\nnil'
+    Got      : '(try* (abc 1 2) (catch* exc (prn "exc is:" exc)))\npr_str: unknown type <class \'RuntimeError\'>'
+Make sure error from core can be caught
+TEST: '(try* (nth () 1) (catch* exc (prn "exc is:" exc)))' -> ['"exc is:".*(length|range|[Bb]ounds|beyond).*\n',nil] -> FAIL (line 24):
+    Expected : '.*\n"exc is:".*(length|range|[Bb]ounds|beyond).*\nnil'
+    Got      : '(try* (nth () 1) (catch* exc (prn "exc is:" exc)))\nnil'
+TEST: '(try* (throw "my exception") (catch* exc (do (prn "exc:" exc) 7)))' -> ['"exc:" "my exception"\n',7] -> FAIL (line 28):
+    Expected : '.*\n"exc:" "my exception"\n7'
+    Got      : '(try* (throw "my exception") (catch* exc (do (prn "exc:" exc) 7)))\npr_str: unknown type <class \'RuntimeError\'>'
+Test that exception handlers get restored correctly
+TEST: '(try* (do (try* "t1" (catch* e "c1")) (throw "e1")) (catch* e "c2"))' -> ['',"c2"] -> SUCCESS
+TEST: '(try* (try* (throw "e1") (catch* e (throw "e2"))) (catch* e "c2"))' -> ['',"c2"] -> SUCCESS
+TEST: '(try* (map throw (list "my err")) (catch* exc exc))' -> ['',"my err"] -> FAIL (line 38):
+    Expected : '.*\n"my\\ err"'
+    Got      : '(try* (map throw (list "my err")) (catch* exc exc))\npr_str: unknown type <class \'RuntimeError\'>'
+
+Testing builtin functions
+TEST: "(symbol? 'abc)" -> ['',true] -> FAIL (line 45):
+    Expected : '.*\ntrue'
+    Got      : "(symbol? 'abc)\n'symbol?' not found"
+TEST: '(symbol? "abc")' -> ['',false] -> FAIL (line 47):
+    Expected : '.*\nfalse'
+    Got      : '(symbol? "abc")\n\'symbol?\' not found'
+TEST: '(nil? nil)' -> ['',true] -> FAIL (line 50):
+    Expected : '.*\ntrue'
+    Got      : "(nil? nil)\n'nil?' not found"
+TEST: '(nil? true)' -> ['',false] -> FAIL (line 52):
+    Expected : '.*\nfalse'
+    Got      : "(nil? true)\n'nil?' not found"
+TEST: '(true? true)' -> ['',true] -> FAIL (line 55):
+    Expected : '.*\ntrue'
+    Got      : "(true? true)\n'true?' not found"
+TEST: '(true? false)' -> ['',false] -> FAIL (line 57):
+    Expected : '.*\nfalse'
+    Got      : "(true? false)\n'true?' not found"
+TEST: '(true? true?)' -> ['',false] -> FAIL (line 59):
+    Expected : '.*\nfalse'
+    Got      : "(true? true?)\n'true?' not found"
+TEST: '(false? false)' -> ['',true] -> FAIL (line 62):
+    Expected : '.*\ntrue'
+    Got      : "(false? false)\n'false?' not found"
+TEST: '(false? true)' -> ['',false] -> FAIL (line 64):
+    Expected : '.*\nfalse'
+    Got      : "(false? true)\n'false?' not found"
+Testing apply function with core functions
+TEST: '(apply + (list 2 3))' -> ['',5] -> SUCCESS
+TEST: '(apply + 4 (list 5))' -> ['',9] -> SUCCESS
+TEST: '(apply prn (list 1 2 "3" (list)))' -> ['1 2 "3" \\(\\)\n',nil] -> FAIL (line 73):
+    Expected : '.*\n1 2 "3" \\(\\)\nnil'
+    Got      : '(apply prn (list 1 2 "3" (list)))\n1 2 "3"\nnil'
+TEST: '(apply prn 1 2 (list "3" (list)))' -> ['1 2 "3" \\(\\)\n',nil] -> FAIL (line 76):
+    Expected : '.*\n1 2 "3" \\(\\)\nnil'
+    Got      : '(apply prn 1 2 (list "3" (list)))\n1 2 "3"\nnil'
+TEST: '(apply list (list))' -> ['',()] -> SUCCESS
+TEST: '(apply symbol? (list (quote two)))' -> ['',true] -> FAIL (line 80):
+    Expected : '.*\ntrue'
+    Got      : "(apply symbol? (list (quote two)))\n'symbol?' not found"
+Testing apply function with user functions
+TEST: '(apply (fn* (a b) (+ a b)) (list 2 3))' -> ['',5] -> FAIL (line 84):
+    Expected : '.*\n5'
+    Got      : "(apply (fn* (a b) (+ a b)) (list 2 3))\n'MalFunction' object is not callable"
+TEST: '(apply (fn* (a b) (+ a b)) 4 (list 5))' -> ['',9] -> FAIL (line 86):
+    Expected : '.*\n9'
+    Got      : "(apply (fn* (a b) (+ a b)) 4 (list 5))\n'MalFunction' object is not callable"
+Testing map function
+TEST: '(def! nums (list 1 2 3))' -> ['',] -> SUCCESS (result ignored)
+TEST: '(def! double (fn* (a) (* 2 a)))' -> ['',] -> SUCCESS (result ignored)
+TEST: '(double 3)' -> ['',6] -> SUCCESS
+TEST: '(map double nums) ' -> ['',(2 4 6)] -> SUCCESS
+TEST: '(map (fn* (x) (symbol? x)) (list 1 (quote two) "three"))' -> ['',(false true false)] -> FAIL (line 96):
+    Expected : '.*\n\\(false\\ true\\ false\\)'
+    Got      : '(map (fn* (x) (symbol? x)) (list 1 (quote two) "three"))\n\'symbol?\' not found'
+TEST: '(= () (map str ()))' -> ['',true] -> SUCCESS
+
+------- Deferrable Functionality ----------
+------- (Needed for self-hosting) -------
+Testing throwing a hash-map
+TEST: '(throw {:msg "err2"})' -> ['.*([Ee][Rr][Rr][Oo][Rr]|[Ee]xception).*msg.*err2.*',] -> FAIL (line 107):
+    Expected : '.*\n.*([Ee][Rr][Rr][Oo][Rr]|[Ee]xception).*msg.*err2.*'
+    Got      : '(throw {:msg "err2"})\n\'throw\' not found'
+Testing symbol and keyword functions
+TEST: '(symbol? :abc)' -> ['',false] -> FAIL (line 111):
+    Expected : '.*\nfalse'
+    Got      : "(symbol? :abc)\n'symbol?' not found"
+TEST: "(symbol? 'abc)" -> ['',true] -> FAIL (line 113):
+    Expected : '.*\ntrue'
+    Got      : "(symbol? 'abc)\n'symbol?' not found"
+TEST: '(symbol? "abc")' -> ['',false] -> FAIL (line 115):
+    Expected : '.*\nfalse'
+    Got      : '(symbol? "abc")\n\'symbol?\' not found'
+TEST: '(symbol? (symbol "abc"))' -> ['',true] -> FAIL (line 117):
+    Expected : '.*\ntrue'
+    Got      : '(symbol? (symbol "abc"))\n\'symbol?\' not found'
+TEST: '(keyword? :abc)' -> ['',true] -> FAIL (line 119):
+    Expected : '.*\ntrue'
+    Got      : "(keyword? :abc)\n'keyword?' not found"
+TEST: "(keyword? 'abc)" -> ['',false] -> FAIL (line 121):
+    Expected : '.*\nfalse'
+    Got      : "(keyword? 'abc)\n'keyword?' not found"
+TEST: '(keyword? "abc")' -> ['',false] -> FAIL (line 123):
+    Expected : '.*\nfalse'
+    Got      : '(keyword? "abc")\n\'keyword?\' not found'
+TEST: '(keyword? "")' -> ['',false] -> FAIL (line 125):
+    Expected : '.*\nfalse'
+    Got      : '(keyword? "")\n\'keyword?\' not found'
+TEST: '(keyword? (keyword "abc"))' -> ['',true] -> FAIL (line 127):
+    Expected : '.*\ntrue'
+    Got      : '(keyword? (keyword "abc"))\n\'keyword?\' not found'
+TEST: '(symbol "abc")' -> ['',abc] -> FAIL (line 130):
+    Expected : '.*\nabc'
+    Got      : '(symbol "abc")\n\'symbol\' not found'
+TEST: '(keyword "abc")' -> ['',:abc] -> FAIL (line 132):
+    Expected : '.*\n:abc'
+    Got      : '(keyword "abc")\n\'keyword\' not found'
+Testing sequential? function
+TEST: '(sequential? (list 1 2 3))' -> ['',true] -> FAIL (line 137):
+    Expected : '.*\ntrue'
+    Got      : "(sequential? (list 1 2 3))\n'sequential?' not found"
+TEST: '(sequential? [15])' -> ['',true] -> FAIL (line 139):
+    Expected : '.*\ntrue'
+    Got      : "(sequential? [15])\n'sequential?' not found"
+TEST: '(sequential? sequential?)' -> ['',false] -> FAIL (line 141):
+    Expected : '.*\nfalse'
+    Got      : "(sequential? sequential?)\n'sequential?' not found"
+TEST: '(sequential? nil)' -> ['',false] -> FAIL (line 143):
+    Expected : '.*\nfalse'
+    Got      : "(sequential? nil)\n'sequential?' not found"
+TEST: '(sequential? "abc")' -> ['',false] -> FAIL (line 145):
+    Expected : '.*\nfalse'
+    Got      : '(sequential? "abc")\n\'sequential?\' not found'
+Testing apply function with core functions and arguments in vector
+TEST: '(apply + 4 [5])' -> ['',9] -> SUCCESS
+TEST: '(apply prn 1 2 ["3" 4])' -> ['1 2 "3" 4\n',nil] -> SUCCESS
+TEST: '(apply list [])' -> ['',()] -> SUCCESS
+Testing apply function with user functions and arguments in vector
+TEST: '(apply (fn* (a b) (+ a b)) [2 3])' -> ['',5] -> FAIL (line 157):
+    Expected : '.*\n5'
+    Got      : "(apply (fn* (a b) (+ a b)) [2 3])\n'MalFunction' object is not callable"
+TEST: '(apply (fn* (a b) (+ a b)) 4 [5])' -> ['',9] -> FAIL (line 159):
+    Expected : '.*\n9'
+    Got      : "(apply (fn* (a b) (+ a b)) 4 [5])\n'MalFunction' object is not callable"
+Testing map function with vectors
+TEST: '(map (fn* (a) (* 2 a)) [1 2 3])' -> ['',(2 4 6)] -> SUCCESS
+TEST: '(map (fn* [& args] (list? args)) [1 2])' -> ['',(true true)] -> SUCCESS
+Testing vector functions
+TEST: '(vector? [10 11])' -> ['',true] -> FAIL (line 172):
+    Expected : '.*\ntrue'
+    Got      : "(vector? [10 11])\n'vector?' not found"
+TEST: "(vector? '(12 13))" -> ['',false] -> FAIL (line 174):
+    Expected : '.*\nfalse'
+    Got      : "(vector? '(12 13))\n'vector?' not found"
+TEST: '(vector 3 4 5)' -> ['',[3 4 5]] -> FAIL (line 176):
+    Expected : '.*\n\\[3\\ 4\\ 5\\]'
+    Got      : "(vector 3 4 5)\n'vector' not found"
+TEST: '(= [] (vector))' -> ['',true] -> FAIL (line 178):
+    Expected : '.*\ntrue'
+    Got      : "(= [] (vector))\n'vector' not found"
+TEST: '(map? {})' -> ['',true] -> FAIL (line 181):
+    Expected : '.*\ntrue'
+    Got      : "(map? {})\n'map?' not found"
+TEST: "(map? '())" -> ['',false] -> FAIL (line 183):
+    Expected : '.*\nfalse'
+    Got      : "(map? '())\n'map?' not found"
+TEST: '(map? [])' -> ['',false] -> FAIL (line 185):
+    Expected : '.*\nfalse'
+    Got      : "(map? [])\n'map?' not found"
+TEST: "(map? 'abc)" -> ['',false] -> FAIL (line 187):
+    Expected : '.*\nfalse'
+    Got      : "(map? 'abc)\n'map?' not found"
+TEST: '(map? :abc)' -> ['',false] -> FAIL (line 189):
+    Expected : '.*\nfalse'
+    Got      : "(map? :abc)\n'map?' not found"
+
+Testing hash-maps
+TEST: '(hash-map "a" 1)' -> ['',{"a" 1}] -> FAIL (line 195):
+    Expected : '.*\n\\{"a"\\ 1\\}'
+    Got      : '(hash-map "a" 1)\n\'hash-map\' not found'
+TEST: '{"a" 1}' -> ['',{"a" 1}] -> SUCCESS
+TEST: '(assoc {} "a" 1)' -> ['',{"a" 1}] -> FAIL (line 201):
+    Expected : '.*\n\\{"a"\\ 1\\}'
+    Got      : '(assoc {} "a" 1)\n\'assoc\' not found'
+TEST: '(get (assoc (assoc {"a" 1 } "b" 2) "c" 3) "a")' -> ['',1] -> FAIL (line 204):
+    Expected : '.*\n1'
+    Got      : '(get (assoc (assoc {"a" 1 } "b" 2) "c" 3) "a")\n\'get\' not found'
+TEST: '(def! hm1 (hash-map))' -> ['',{}] -> FAIL (line 207):
+    Expected : '.*\n\\{\\}'
+    Got      : "(def! hm1 (hash-map))\n'hash-map' not found"
+TEST: '(map? hm1)' -> ['',true] -> FAIL (line 210):
+    Expected : '.*\ntrue'
+    Got      : "(map? hm1)\n'map?' not found"
+TEST: '(map? 1)' -> ['',false] -> FAIL (line 212):
+    Expected : '.*\nfalse'
+    Got      : "(map? 1)\n'map?' not found"
+TEST: '(map? "abc")' -> ['',false] -> FAIL (line 214):
+    Expected : '.*\nfalse'
+    Got      : '(map? "abc")\n\'map?\' not found'
+TEST: '(get nil "a")' -> ['',nil] -> FAIL (line 217):
+    Expected : '.*\nnil'
+    Got      : '(get nil "a")\n\'get\' not found'
+TEST: '(get hm1 "a")' -> ['',nil] -> FAIL (line 220):
+    Expected : '.*\nnil'
+    Got      : '(get hm1 "a")\n\'get\' not found'
+TEST: '(contains? hm1 "a")' -> ['',false] -> FAIL (line 223):
+    Expected : '.*\nfalse'
+    Got      : '(contains? hm1 "a")\n\'contains?\' not found'
+TEST: '(def! hm2 (assoc hm1 "a" 1))' -> ['',{"a" 1}] -> FAIL (line 226):
+    Expected : '.*\n\\{"a"\\ 1\\}'
+    Got      : '(def! hm2 (assoc hm1 "a" 1))\n\'assoc\' not found'
+TEST: '(get hm1 "a")' -> ['',nil] -> FAIL (line 229):
+    Expected : '.*\nnil'
+    Got      : '(get hm1 "a")\n\'get\' not found'
+TEST: '(contains? hm1 "a")' -> ['',false] -> FAIL (line 232):
+    Expected : '.*\nfalse'
+    Got      : '(contains? hm1 "a")\n\'contains?\' not found'
+TEST: '(get hm2 "a")' -> ['',1] -> FAIL (line 235):
+    Expected : '.*\n1'
+    Got      : '(get hm2 "a")\n\'get\' not found'
+TEST: '(contains? hm2 "a")' -> ['',true] -> FAIL (line 238):
+    Expected : '.*\ntrue'
+    Got      : '(contains? hm2 "a")\n\'contains?\' not found'
+TEST: '(keys hm1)' -> ['',()] -> FAIL (line 243):
+    Expected : '.*\n\\(\\)'
+    Got      : "(keys hm1)\n'keys' not found"
+TEST: '(= () (keys hm1))' -> ['',true] -> FAIL (line 245):
+    Expected : '.*\ntrue'
+    Got      : "(= () (keys hm1))\n'keys' not found"
+TEST: '(keys hm2)' -> ['',("a")] -> FAIL (line 248):
+    Expected : '.*\n\\("a"\\)'
+    Got      : "(keys hm2)\n'keys' not found"
+TEST: '(keys {"1" 1})' -> ['',("1")] -> FAIL (line 251):
+    Expected : '.*\n\\("1"\\)'
+    Got      : '(keys {"1" 1})\n\'keys\' not found'
+TEST: '(vals hm1)' -> ['',()] -> FAIL (line 255):
+    Expected : '.*\n\\(\\)'
+    Got      : "(vals hm1)\n'vals' not found"
+TEST: '(= () (vals hm1))' -> ['',true] -> FAIL (line 257):
+    Expected : '.*\ntrue'
+    Got      : "(= () (vals hm1))\n'vals' not found"
+TEST: '(vals hm2)' -> ['',(1)] -> FAIL (line 260):
+    Expected : '.*\n\\(1\\)'
+    Got      : "(vals hm2)\n'vals' not found"
+TEST: '(count (keys (assoc hm2 "b" 2 "c" 3)))' -> ['',3] -> FAIL (line 263):
+    Expected : '.*\n3'
+    Got      : '(count (keys (assoc hm2 "b" 2 "c" 3)))\n\'keys\' not found'
+Testing keywords as hash-map keys
+TEST: '(get {:abc 123} :abc)' -> ['',123] -> FAIL (line 267):
+    Expected : '.*\n123'
+    Got      : "(get {:abc 123} :abc)\n'get' not found"
+TEST: '(contains? {:abc 123} :abc)' -> ['',true] -> FAIL (line 269):
+    Expected : '.*\ntrue'
+    Got      : "(contains? {:abc 123} :abc)\n'contains?' not found"
+TEST: '(contains? {:abcd 123} :abc)' -> ['',false] -> FAIL (line 271):
+    Expected : '.*\nfalse'
+    Got      : "(contains? {:abcd 123} :abc)\n'contains?' not found"
+TEST: '(assoc {} :bcd 234)' -> ['',{:bcd 234}] -> FAIL (line 273):
+    Expected : '.*\n\\{:bcd\\ 234\\}'
+    Got      : "(assoc {} :bcd 234)\n'assoc' not found"
+TEST: '(keyword? (nth (keys {:abc 123 :def 456}) 0))' -> ['',true] -> FAIL (line 275):
+    Expected : '.*\ntrue'
+    Got      : "(keyword? (nth (keys {:abc 123 :def 456}) 0))\n'keyword?' not found"
+TEST: '(keyword? (nth (vals {"a" :abc "b" :def}) 0))' -> ['',true] -> FAIL (line 277):
+    Expected : '.*\ntrue'
+    Got      : '(keyword? (nth (vals {"a" :abc "b" :def}) 0))\n\'keyword?\' not found'
+Testing whether assoc updates properly
+TEST: '(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))' -> ['',] -> SUCCESS (result ignored)
+TEST: '(get hm4 :a)' -> ['',3] -> FAIL (line 282):
+    Expected : '.*\n3'
+    Got      : "(get hm4 :a)\n'get' not found"
+TEST: '(get hm4 :b)' -> ['',2] -> FAIL (line 284):
+    Expected : '.*\n2'
+    Got      : "(get hm4 :b)\n'get' not found"
+TEST: '(get hm4 :c)' -> ['',1] -> FAIL (line 286):
+    Expected : '.*\n1'
+    Got      : "(get hm4 :c)\n'get' not found"
+Testing nil as hash-map values
+TEST: '(contains? {:abc nil} :abc)' -> ['',true] -> FAIL (line 290):
+    Expected : '.*\ntrue'
+    Got      : "(contains? {:abc nil} :abc)\n'contains?' not found"
+TEST: '(assoc {} :bcd nil)' -> ['',{:bcd nil}] -> FAIL (line 292):
+    Expected : '.*\n\\{:bcd\\ nil\\}'
+    Got      : "(assoc {} :bcd nil)\n'assoc' not found"
+
+Additional str and pr-str tests
+TEST: '(str "A" {:abc "val"} "Z")' -> ['',"A{:abc val}Z"] -> SUCCESS
+TEST: '(str true "." false "." nil "." :keyw "." \'symb)' -> ['',"true.false.nil.:keyw.symb"] -> SUCCESS
+TEST: '(pr-str "A" {:abc "val"} "Z")' -> ['',"\"A\" {:abc \"val\"} \"Z\""] -> SUCCESS
+TEST: '(pr-str true "." false "." nil "." :keyw "." \'symb)' -> ['',"true \".\" false \".\" nil \".\" :keyw \".\" symb"] -> SUCCESS
+TEST: '(def! s (str {:abc "val1" :def "val2"}))' -> ['',] -> SUCCESS (result ignored)
+TEST: '(cond (= s "{:abc val1 :def val2}") true (= s "{:def val2 :abc val1}") true)' -> ['',true] -> SUCCESS
+TEST: '(def! p (pr-str {:abc "val1" :def "val2"}))' -> ['',] -> SUCCESS (result ignored)
+TEST: '(cond (= p "{:abc \\"val1\\" :def \\"val2\\"}") true (= p "{:def \\"val2\\" :abc \\"val1\\"}") true)' -> ['',true] -> SUCCESS
+
+Test extra function arguments as Mal List (bypassing TCO with apply)
+TEST: '(apply (fn* (& more) (list? more)) [1 2 3])' -> ['',true] -> FAIL (line 320):
+    Expected : '.*\ntrue'
+    Got      : "(apply (fn* (& more) (list? more)) [1 2 3])\n'MalFunction' object is not callable"
+TEST: '(apply (fn* (& more) (list? more)) [])' -> ['',true] -> FAIL (line 322):
+    Expected : '.*\ntrue'
+    Got      : "(apply (fn* (& more) (list? more)) [])\n'MalFunction' object is not callable"
+TEST: '(apply (fn* (a & more) (list? more)) [1])' -> ['',true] -> FAIL (line 324):
+    Expected : '.*\ntrue'
+    Got      : "(apply (fn* (a & more) (list? more)) [1])\n'MalFunction' object is not callable"
+
+------- Optional Functionality --------------
+------- (Not needed for self-hosting) -------
+
+Testing try* without catch*
+TEST: '(try* xyz)' -> [".*\\'?xyz\\'? not found.*",] -> SOFT FAIL (line 341):
+    Expected : ".*\n.*\\'?xyz\\'? not found.*"
+    Got      : '(try* xyz)\nnot enough values to unpack (expected 3, got 2)'
+
+Testing throwing non-strings
+TEST: '(try* (throw (list 1 2 3)) (catch* exc (do (prn "err:" exc) 7)))' -> ['"err:" \\(1 2 3\\)\n',7] -> SOFT FAIL (line 347):
+    Expected : '.*\n"err:" \\(1 2 3\\)\n7'
+    Got      : '(try* (throw (list 1 2 3)) (catch* exc (do (prn "err:" exc) 7)))\npr_str: unknown type <class \'RuntimeError\'>'
+
+Testing dissoc
+TEST: '(def! hm3 (assoc hm2 "b" 2))' -> ['',] -> SUCCESS (result ignored)
+TEST: '(count (keys hm3))' -> ['',2] -> SOFT FAIL (line 353):
+    Expected : '.*\n2'
+    Got      : "(count (keys hm3))\n'keys' not found"
+TEST: '(count (vals hm3))' -> ['',2] -> SOFT FAIL (line 355):
+    Expected : '.*\n2'
+    Got      : "(count (vals hm3))\n'vals' not found"
+TEST: '(dissoc hm3 "a")' -> ['',{"b" 2}] -> SOFT FAIL (line 357):
+    Expected : '.*\n\\{"b"\\ 2\\}'
+    Got      : '(dissoc hm3 "a")\n\'dissoc\' not found'
+TEST: '(dissoc hm3 "a" "b")' -> ['',{}] -> SOFT FAIL (line 359):
+    Expected : '.*\n\\{\\}'
+    Got      : '(dissoc hm3 "a" "b")\n\'dissoc\' not found'
+TEST: '(dissoc hm3 "a" "b" "c")' -> ['',{}] -> SOFT FAIL (line 361):
+    Expected : '.*\n\\{\\}'
+    Got      : '(dissoc hm3 "a" "b" "c")\n\'dissoc\' not found'
+TEST: '(count (keys hm3))' -> ['',2] -> SOFT FAIL (line 363):
+    Expected : '.*\n2'
+    Got      : "(count (keys hm3))\n'keys' not found"
+TEST: '(dissoc {:cde 345 :fgh 456} :cde)' -> ['',{:fgh 456}] -> SOFT FAIL (line 366):
+    Expected : '.*\n\\{:fgh\\ 456\\}'
+    Got      : "(dissoc {:cde 345 :fgh 456} :cde)\n'dissoc' not found"
+TEST: '(dissoc {:cde nil :fgh 456} :cde)' -> ['',{:fgh 456}] -> SOFT FAIL (line 368):
+    Expected : '.*\n\\{:fgh\\ 456\\}'
+    Got      : "(dissoc {:cde nil :fgh 456} :cde)\n'dissoc' not found"
+
+Testing equality of hash-maps
+TEST: '(= {} {})' -> ['',true] -> SUCCESS
+TEST: '(= {} (hash-map))' -> ['',true] -> SOFT FAIL (line 375):
+    Expected : '.*\ntrue'
+    Got      : "(= {} (hash-map))\n'hash-map' not found"
+TEST: '(= {:a 11 :b 22} (hash-map :b 22 :a 11))' -> ['',true] -> SOFT FAIL (line 377):
+    Expected : '.*\ntrue'
+    Got      : "(= {:a 11 :b 22} (hash-map :b 22 :a 11))\n'hash-map' not found"
+TEST: '(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))' -> ['',true] -> SOFT FAIL (line 379):
+    Expected : '.*\ntrue'
+    Got      : "(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))\n'hash-map' not found"
+TEST: '(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))' -> ['',true] -> SOFT FAIL (line 381):
+    Expected : '.*\ntrue'
+    Got      : "(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))\n'hash-map' not found"
+TEST: '(= {:a 11 :b 22} (hash-map :b 23 :a 11))' -> ['',false] -> SOFT FAIL (line 383):
+    Expected : '.*\nfalse'
+    Got      : "(= {:a 11 :b 22} (hash-map :b 23 :a 11))\n'hash-map' not found"
+TEST: '(= {:a 11 :b 22} (hash-map :a 11))' -> ['',false] -> SOFT FAIL (line 385):
+    Expected : '.*\nfalse'
+    Got      : "(= {:a 11 :b 22} (hash-map :a 11))\n'hash-map' not found"
+TEST: '(= {:a [11 22]} {:a (list 11 22)})' -> ['',true] -> SOFT FAIL (line 387):
+    Expected : '.*\ntrue'
+    Got      : '(= {:a [11 22]} {:a (list 11 22)})\nfalse'
+TEST: '(= {:a 11 :b 22} (list :a 11 :b 22))' -> ['',false] -> SUCCESS
+TEST: '(= {} [])' -> ['',false] -> SUCCESS
+TEST: '(= [] {})' -> ['',false] -> SUCCESS
+TEST: '(keyword :abc)' -> ['',:abc] -> SOFT FAIL (line 396):
+    Expected : '.*\n:abc'
+    Got      : "(keyword :abc)\n'keyword' not found"
+TEST: '(keyword? (first (keys {":abc" 123 ":def" 456})))' -> ['',false] -> SOFT FAIL (line 398):
+    Expected : '.*\nfalse'
+    Got      : '(keyword? (first (keys {":abc" 123 ":def" 456})))\n\'keyword?\' not found'
+
+FAILURES:
+FAILED TEST (line 5): (throw "err1") -> ['.*([Ee][Rr][Rr][Oo][Rr]|[Ee]xception).*err1.*',]:
+    Expected : '.*\n.*([Ee][Rr][Rr][Oo][Rr]|[Ee]xception).*err1.*'
+    Got      : '(throw "err1")\n\'throw\' not found'
+FAILED TEST (line 15): (try* abc (catch* exc (prn "exc is:" exc))) -> ['"exc is:" "\'abc\' not found"\n',nil]:
+    Expected : '.*\n"exc is:" "\'abc\' not found"\nnil'
+    Got      : '(try* abc (catch* exc (prn "exc is:" exc)))\npr_str: unknown type <class \'RuntimeError\'>'
+FAILED TEST (line 19): (try* (abc 1 2) (catch* exc (prn "exc is:" exc))) -> ['"exc is:" "\'abc\' not found"\n',nil]:
+    Expected : '.*\n"exc is:" "\'abc\' not found"\nnil'
+    Got      : '(try* (abc 1 2) (catch* exc (prn "exc is:" exc)))\npr_str: unknown type <class \'RuntimeError\'>'
+FAILED TEST (line 24): (try* (nth () 1) (catch* exc (prn "exc is:" exc))) -> ['"exc is:".*(length|range|[Bb]ounds|beyond).*\n',nil]:
+    Expected : '.*\n"exc is:".*(length|range|[Bb]ounds|beyond).*\nnil'
+    Got      : '(try* (nth () 1) (catch* exc (prn "exc is:" exc)))\nnil'
+FAILED TEST (line 28): (try* (throw "my exception") (catch* exc (do (prn "exc:" exc) 7))) -> ['"exc:" "my exception"\n',7]:
+    Expected : '.*\n"exc:" "my exception"\n7'
+    Got      : '(try* (throw "my exception") (catch* exc (do (prn "exc:" exc) 7)))\npr_str: unknown type <class \'RuntimeError\'>'
+FAILED TEST (line 38): (try* (map throw (list "my err")) (catch* exc exc)) -> ['',"my err"]:
+    Expected : '.*\n"my\\ err"'
+    Got      : '(try* (map throw (list "my err")) (catch* exc exc))\npr_str: unknown type <class \'RuntimeError\'>'
+FAILED TEST (line 45): (symbol? 'abc) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(symbol? 'abc)\n'symbol?' not found"
+FAILED TEST (line 47): (symbol? "abc") -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : '(symbol? "abc")\n\'symbol?\' not found'
+FAILED TEST (line 50): (nil? nil) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(nil? nil)\n'nil?' not found"
+FAILED TEST (line 52): (nil? true) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(nil? true)\n'nil?' not found"
+FAILED TEST (line 55): (true? true) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(true? true)\n'true?' not found"
+FAILED TEST (line 57): (true? false) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(true? false)\n'true?' not found"
+FAILED TEST (line 59): (true? true?) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(true? true?)\n'true?' not found"
+FAILED TEST (line 62): (false? false) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(false? false)\n'false?' not found"
+FAILED TEST (line 64): (false? true) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(false? true)\n'false?' not found"
+FAILED TEST (line 73): (apply prn (list 1 2 "3" (list))) -> ['1 2 "3" \\(\\)\n',nil]:
+    Expected : '.*\n1 2 "3" \\(\\)\nnil'
+    Got      : '(apply prn (list 1 2 "3" (list)))\n1 2 "3"\nnil'
+FAILED TEST (line 76): (apply prn 1 2 (list "3" (list))) -> ['1 2 "3" \\(\\)\n',nil]:
+    Expected : '.*\n1 2 "3" \\(\\)\nnil'
+    Got      : '(apply prn 1 2 (list "3" (list)))\n1 2 "3"\nnil'
+FAILED TEST (line 80): (apply symbol? (list (quote two))) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(apply symbol? (list (quote two)))\n'symbol?' not found"
+FAILED TEST (line 84): (apply (fn* (a b) (+ a b)) (list 2 3)) -> ['',5]:
+    Expected : '.*\n5'
+    Got      : "(apply (fn* (a b) (+ a b)) (list 2 3))\n'MalFunction' object is not callable"
+FAILED TEST (line 86): (apply (fn* (a b) (+ a b)) 4 (list 5)) -> ['',9]:
+    Expected : '.*\n9'
+    Got      : "(apply (fn* (a b) (+ a b)) 4 (list 5))\n'MalFunction' object is not callable"
+FAILED TEST (line 96): (map (fn* (x) (symbol? x)) (list 1 (quote two) "three")) -> ['',(false true false)]:
+    Expected : '.*\n\\(false\\ true\\ false\\)'
+    Got      : '(map (fn* (x) (symbol? x)) (list 1 (quote two) "three"))\n\'symbol?\' not found'
+FAILED TEST (line 107): (throw {:msg "err2"}) -> ['.*([Ee][Rr][Rr][Oo][Rr]|[Ee]xception).*msg.*err2.*',]:
+    Expected : '.*\n.*([Ee][Rr][Rr][Oo][Rr]|[Ee]xception).*msg.*err2.*'
+    Got      : '(throw {:msg "err2"})\n\'throw\' not found'
+FAILED TEST (line 111): (symbol? :abc) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(symbol? :abc)\n'symbol?' not found"
+FAILED TEST (line 113): (symbol? 'abc) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(symbol? 'abc)\n'symbol?' not found"
+FAILED TEST (line 115): (symbol? "abc") -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : '(symbol? "abc")\n\'symbol?\' not found'
+FAILED TEST (line 117): (symbol? (symbol "abc")) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : '(symbol? (symbol "abc"))\n\'symbol?\' not found'
+FAILED TEST (line 119): (keyword? :abc) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(keyword? :abc)\n'keyword?' not found"
+FAILED TEST (line 121): (keyword? 'abc) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(keyword? 'abc)\n'keyword?' not found"
+FAILED TEST (line 123): (keyword? "abc") -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : '(keyword? "abc")\n\'keyword?\' not found'
+FAILED TEST (line 125): (keyword? "") -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : '(keyword? "")\n\'keyword?\' not found'
+FAILED TEST (line 127): (keyword? (keyword "abc")) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : '(keyword? (keyword "abc"))\n\'keyword?\' not found'
+FAILED TEST (line 130): (symbol "abc") -> ['',abc]:
+    Expected : '.*\nabc'
+    Got      : '(symbol "abc")\n\'symbol\' not found'
+FAILED TEST (line 132): (keyword "abc") -> ['',:abc]:
+    Expected : '.*\n:abc'
+    Got      : '(keyword "abc")\n\'keyword\' not found'
+FAILED TEST (line 137): (sequential? (list 1 2 3)) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(sequential? (list 1 2 3))\n'sequential?' not found"
+FAILED TEST (line 139): (sequential? [15]) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(sequential? [15])\n'sequential?' not found"
+FAILED TEST (line 141): (sequential? sequential?) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(sequential? sequential?)\n'sequential?' not found"
+FAILED TEST (line 143): (sequential? nil) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(sequential? nil)\n'sequential?' not found"
+FAILED TEST (line 145): (sequential? "abc") -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : '(sequential? "abc")\n\'sequential?\' not found'
+FAILED TEST (line 157): (apply (fn* (a b) (+ a b)) [2 3]) -> ['',5]:
+    Expected : '.*\n5'
+    Got      : "(apply (fn* (a b) (+ a b)) [2 3])\n'MalFunction' object is not callable"
+FAILED TEST (line 159): (apply (fn* (a b) (+ a b)) 4 [5]) -> ['',9]:
+    Expected : '.*\n9'
+    Got      : "(apply (fn* (a b) (+ a b)) 4 [5])\n'MalFunction' object is not callable"
+FAILED TEST (line 172): (vector? [10 11]) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(vector? [10 11])\n'vector?' not found"
+FAILED TEST (line 174): (vector? '(12 13)) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(vector? '(12 13))\n'vector?' not found"
+FAILED TEST (line 176): (vector 3 4 5) -> ['',[3 4 5]]:
+    Expected : '.*\n\\[3\\ 4\\ 5\\]'
+    Got      : "(vector 3 4 5)\n'vector' not found"
+FAILED TEST (line 178): (= [] (vector)) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(= [] (vector))\n'vector' not found"
+FAILED TEST (line 181): (map? {}) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(map? {})\n'map?' not found"
+FAILED TEST (line 183): (map? '()) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(map? '())\n'map?' not found"
+FAILED TEST (line 185): (map? []) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(map? [])\n'map?' not found"
+FAILED TEST (line 187): (map? 'abc) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(map? 'abc)\n'map?' not found"
+FAILED TEST (line 189): (map? :abc) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(map? :abc)\n'map?' not found"
+FAILED TEST (line 195): (hash-map "a" 1) -> ['',{"a" 1}]:
+    Expected : '.*\n\\{"a"\\ 1\\}'
+    Got      : '(hash-map "a" 1)\n\'hash-map\' not found'
+FAILED TEST (line 201): (assoc {} "a" 1) -> ['',{"a" 1}]:
+    Expected : '.*\n\\{"a"\\ 1\\}'
+    Got      : '(assoc {} "a" 1)\n\'assoc\' not found'
+FAILED TEST (line 204): (get (assoc (assoc {"a" 1 } "b" 2) "c" 3) "a") -> ['',1]:
+    Expected : '.*\n1'
+    Got      : '(get (assoc (assoc {"a" 1 } "b" 2) "c" 3) "a")\n\'get\' not found'
+FAILED TEST (line 207): (def! hm1 (hash-map)) -> ['',{}]:
+    Expected : '.*\n\\{\\}'
+    Got      : "(def! hm1 (hash-map))\n'hash-map' not found"
+FAILED TEST (line 210): (map? hm1) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(map? hm1)\n'map?' not found"
+FAILED TEST (line 212): (map? 1) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(map? 1)\n'map?' not found"
+FAILED TEST (line 214): (map? "abc") -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : '(map? "abc")\n\'map?\' not found'
+FAILED TEST (line 217): (get nil "a") -> ['',nil]:
+    Expected : '.*\nnil'
+    Got      : '(get nil "a")\n\'get\' not found'
+FAILED TEST (line 220): (get hm1 "a") -> ['',nil]:
+    Expected : '.*\nnil'
+    Got      : '(get hm1 "a")\n\'get\' not found'
+FAILED TEST (line 223): (contains? hm1 "a") -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : '(contains? hm1 "a")\n\'contains?\' not found'
+FAILED TEST (line 226): (def! hm2 (assoc hm1 "a" 1)) -> ['',{"a" 1}]:
+    Expected : '.*\n\\{"a"\\ 1\\}'
+    Got      : '(def! hm2 (assoc hm1 "a" 1))\n\'assoc\' not found'
+FAILED TEST (line 229): (get hm1 "a") -> ['',nil]:
+    Expected : '.*\nnil'
+    Got      : '(get hm1 "a")\n\'get\' not found'
+FAILED TEST (line 232): (contains? hm1 "a") -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : '(contains? hm1 "a")\n\'contains?\' not found'
+FAILED TEST (line 235): (get hm2 "a") -> ['',1]:
+    Expected : '.*\n1'
+    Got      : '(get hm2 "a")\n\'get\' not found'
+FAILED TEST (line 238): (contains? hm2 "a") -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : '(contains? hm2 "a")\n\'contains?\' not found'
+FAILED TEST (line 243): (keys hm1) -> ['',()]:
+    Expected : '.*\n\\(\\)'
+    Got      : "(keys hm1)\n'keys' not found"
+FAILED TEST (line 245): (= () (keys hm1)) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(= () (keys hm1))\n'keys' not found"
+FAILED TEST (line 248): (keys hm2) -> ['',("a")]:
+    Expected : '.*\n\\("a"\\)'
+    Got      : "(keys hm2)\n'keys' not found"
+FAILED TEST (line 251): (keys {"1" 1}) -> ['',("1")]:
+    Expected : '.*\n\\("1"\\)'
+    Got      : '(keys {"1" 1})\n\'keys\' not found'
+FAILED TEST (line 255): (vals hm1) -> ['',()]:
+    Expected : '.*\n\\(\\)'
+    Got      : "(vals hm1)\n'vals' not found"
+FAILED TEST (line 257): (= () (vals hm1)) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(= () (vals hm1))\n'vals' not found"
+FAILED TEST (line 260): (vals hm2) -> ['',(1)]:
+    Expected : '.*\n\\(1\\)'
+    Got      : "(vals hm2)\n'vals' not found"
+FAILED TEST (line 263): (count (keys (assoc hm2 "b" 2 "c" 3))) -> ['',3]:
+    Expected : '.*\n3'
+    Got      : '(count (keys (assoc hm2 "b" 2 "c" 3)))\n\'keys\' not found'
+FAILED TEST (line 267): (get {:abc 123} :abc) -> ['',123]:
+    Expected : '.*\n123'
+    Got      : "(get {:abc 123} :abc)\n'get' not found"
+FAILED TEST (line 269): (contains? {:abc 123} :abc) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(contains? {:abc 123} :abc)\n'contains?' not found"
+FAILED TEST (line 271): (contains? {:abcd 123} :abc) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(contains? {:abcd 123} :abc)\n'contains?' not found"
+FAILED TEST (line 273): (assoc {} :bcd 234) -> ['',{:bcd 234}]:
+    Expected : '.*\n\\{:bcd\\ 234\\}'
+    Got      : "(assoc {} :bcd 234)\n'assoc' not found"
+FAILED TEST (line 275): (keyword? (nth (keys {:abc 123 :def 456}) 0)) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(keyword? (nth (keys {:abc 123 :def 456}) 0))\n'keyword?' not found"
+FAILED TEST (line 277): (keyword? (nth (vals {"a" :abc "b" :def}) 0)) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : '(keyword? (nth (vals {"a" :abc "b" :def}) 0))\n\'keyword?\' not found'
+FAILED TEST (line 282): (get hm4 :a) -> ['',3]:
+    Expected : '.*\n3'
+    Got      : "(get hm4 :a)\n'get' not found"
+FAILED TEST (line 284): (get hm4 :b) -> ['',2]:
+    Expected : '.*\n2'
+    Got      : "(get hm4 :b)\n'get' not found"
+FAILED TEST (line 286): (get hm4 :c) -> ['',1]:
+    Expected : '.*\n1'
+    Got      : "(get hm4 :c)\n'get' not found"
+FAILED TEST (line 290): (contains? {:abc nil} :abc) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(contains? {:abc nil} :abc)\n'contains?' not found"
+FAILED TEST (line 292): (assoc {} :bcd nil) -> ['',{:bcd nil}]:
+    Expected : '.*\n\\{:bcd\\ nil\\}'
+    Got      : "(assoc {} :bcd nil)\n'assoc' not found"
+FAILED TEST (line 320): (apply (fn* (& more) (list? more)) [1 2 3]) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(apply (fn* (& more) (list? more)) [1 2 3])\n'MalFunction' object is not callable"
+FAILED TEST (line 322): (apply (fn* (& more) (list? more)) []) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(apply (fn* (& more) (list? more)) [])\n'MalFunction' object is not callable"
+FAILED TEST (line 324): (apply (fn* (a & more) (list? more)) [1]) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(apply (fn* (a & more) (list? more)) [1])\n'MalFunction' object is not callable"
+SOFT FAILED TEST (line 341): (try* xyz) -> [".*\\'?xyz\\'? not found.*",]:
+    Expected : ".*\n.*\\'?xyz\\'? not found.*"
+    Got      : '(try* xyz)\nnot enough values to unpack (expected 3, got 2)'
+SOFT FAILED TEST (line 347): (try* (throw (list 1 2 3)) (catch* exc (do (prn "err:" exc) 7))) -> ['"err:" \\(1 2 3\\)\n',7]:
+    Expected : '.*\n"err:" \\(1 2 3\\)\n7'
+    Got      : '(try* (throw (list 1 2 3)) (catch* exc (do (prn "err:" exc) 7)))\npr_str: unknown type <class \'RuntimeError\'>'
+SOFT FAILED TEST (line 353): (count (keys hm3)) -> ['',2]:
+    Expected : '.*\n2'
+    Got      : "(count (keys hm3))\n'keys' not found"
+SOFT FAILED TEST (line 355): (count (vals hm3)) -> ['',2]:
+    Expected : '.*\n2'
+    Got      : "(count (vals hm3))\n'vals' not found"
+SOFT FAILED TEST (line 357): (dissoc hm3 "a") -> ['',{"b" 2}]:
+    Expected : '.*\n\\{"b"\\ 2\\}'
+    Got      : '(dissoc hm3 "a")\n\'dissoc\' not found'
+SOFT FAILED TEST (line 359): (dissoc hm3 "a" "b") -> ['',{}]:
+    Expected : '.*\n\\{\\}'
+    Got      : '(dissoc hm3 "a" "b")\n\'dissoc\' not found'
+SOFT FAILED TEST (line 361): (dissoc hm3 "a" "b" "c") -> ['',{}]:
+    Expected : '.*\n\\{\\}'
+    Got      : '(dissoc hm3 "a" "b" "c")\n\'dissoc\' not found'
+SOFT FAILED TEST (line 363): (count (keys hm3)) -> ['',2]:
+    Expected : '.*\n2'
+    Got      : "(count (keys hm3))\n'keys' not found"
+SOFT FAILED TEST (line 366): (dissoc {:cde 345 :fgh 456} :cde) -> ['',{:fgh 456}]:
+    Expected : '.*\n\\{:fgh\\ 456\\}'
+    Got      : "(dissoc {:cde 345 :fgh 456} :cde)\n'dissoc' not found"
+SOFT FAILED TEST (line 368): (dissoc {:cde nil :fgh 456} :cde) -> ['',{:fgh 456}]:
+    Expected : '.*\n\\{:fgh\\ 456\\}'
+    Got      : "(dissoc {:cde nil :fgh 456} :cde)\n'dissoc' not found"
+SOFT FAILED TEST (line 375): (= {} (hash-map)) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(= {} (hash-map))\n'hash-map' not found"
+SOFT FAILED TEST (line 377): (= {:a 11 :b 22} (hash-map :b 22 :a 11)) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(= {:a 11 :b 22} (hash-map :b 22 :a 11))\n'hash-map' not found"
+SOFT FAILED TEST (line 379): (= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11)) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))\n'hash-map' not found"
+SOFT FAILED TEST (line 381): (= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11)) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : "(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))\n'hash-map' not found"
+SOFT FAILED TEST (line 383): (= {:a 11 :b 22} (hash-map :b 23 :a 11)) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(= {:a 11 :b 22} (hash-map :b 23 :a 11))\n'hash-map' not found"
+SOFT FAILED TEST (line 385): (= {:a 11 :b 22} (hash-map :a 11)) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : "(= {:a 11 :b 22} (hash-map :a 11))\n'hash-map' not found"
+SOFT FAILED TEST (line 387): (= {:a [11 22]} {:a (list 11 22)}) -> ['',true]:
+    Expected : '.*\ntrue'
+    Got      : '(= {:a [11 22]} {:a (list 11 22)})\nfalse'
+SOFT FAILED TEST (line 396): (keyword :abc) -> ['',:abc]:
+    Expected : '.*\n:abc'
+    Got      : "(keyword :abc)\n'keyword' not found"
+SOFT FAILED TEST (line 398): (keyword? (first (keys {":abc" 123 ":def" 456}))) -> ['',false]:
+    Expected : '.*\nfalse'
+    Got      : '(keyword? (first (keys {":abc" 123 ":def" 456})))\n\'keyword?\' not found'
+
+TEST RESULTS (for ../tests/step9_try.mal):
+   19: soft failing tests
+   86: failing tests
+   31: passing tests
+  136: total tests
+

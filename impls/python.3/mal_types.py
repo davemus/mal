@@ -14,7 +14,7 @@ def make_string(str_):  # noqa
     )
 is_string = lambda entity: isinstance(entity, str)  # noqa
 
-make_keyword = lambda str_: u"\u029e" + str(str_)
+make_keyword = lambda str_: str_ if is_keyword(str_) else u"\u029e" + str(str_.lstrip(':'))
 is_keyword = lambda entity: isinstance(entity, str) and entity.startswith(u"\u029e")
 
 make_symbol = lambda str_: bytes(str_, encoding='utf-8')
@@ -25,11 +25,22 @@ make_list = list
 is_list = lambda entity: isinstance(entity, list) and not is_atom(entity)
 
 make_vector = tuple
+make_vector_vargs = lambda *args: make_vector(args)
 is_vector = lambda entity: isinstance(entity, tuple) and not isinstance(entity, function)
 
 make_hashmap = lambda iterable: dict(zip(iterable[0::2], iterable[1::2]))
+make_hashmap_vargs = lambda *args: make_hashmap(args)
 make_hashmap_from_pydict = lambda x: x
 is_hashmap = lambda entity: isinstance(entity, dict)
+keys = lambda entity: make_list(entity.keys())
+values = lambda entity: make_list(entity.values())
+get = lambda entity, key: entity.get(key, NIL) if is_hashmap(entity) else NIL
+contains = lambda hashmap, key: key in hashmap.keys()
+def assoc(hashmap, *items):  # noqa
+    return make_hashmap_from_pydict({**hashmap, **{k: v for k, v in zip(items[0::2], items[1::2])}})
+def dissoc(hashmap, *items):  # noqa
+    return make_hashmap_from_pydict({k: v for k, v in hashmap.items() if k not in items})
+
 
 NIL = None
 is_nil = lambda entity: entity is NIL
@@ -37,6 +48,8 @@ is_nil = lambda entity: entity is NIL
 TRUE = True
 FALSE = False
 is_bool = lambda entity: isinstance(entity, bool)
+is_true = lambda entity: entity is TRUE
+is_false = lambda entity: entity is FALSE
 
 function = namedtuple('MalFunction', 'ast params env fn is_macro')
 make_function = lambda ast, params, env, fn, is_macro=False: function(ast, params, env, fn, is_macro)
@@ -106,8 +119,11 @@ def rest(entity):
 
 
 def nth(entity, n):
-    if is_iterable(entity) and len(entity) > n:
-        return entity[n]
+    if is_iterable(entity):
+        try:
+            return entity[n]
+        except IndexError:
+            raise MalException('Index is beyond bounds')
     return NIL
 
 
@@ -126,3 +142,8 @@ def concat(*sequences):
     for sequence in sequences:
         joined += sequence
     return make_list(joined)
+
+
+def init_save_value(self, value):
+    self.value = value
+MalException = type('MalException', (Exception,), {'__init__': init_save_value})

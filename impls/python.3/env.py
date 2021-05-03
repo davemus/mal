@@ -1,5 +1,5 @@
 from mal_types import (
-    make_symbol, make_list, is_symbol
+    make_symbol, make_list, is_symbol, MalException
 )
 
 
@@ -36,7 +36,7 @@ class Env:
         if env is None:
             if is_symbol(name):
                 name = str(name, encoding='utf-8')
-            raise RuntimeError(f"'{name}' not found")
+            raise RuntimeError(f"\"'{name}' not found\"")
         return env._scope[name]
 
     def __str__(self):

@@ -5,9 +5,13 @@ from printer import pr_str
 from reader import read_str
 from mal_types import (
     make_list, is_list, NIL, is_empty, count,
-    is_iterable, make_symbol,
+    is_iterable, make_symbol, is_symbol,
     make_atom, is_atom, deref, swap, reset,
-    cons, concat, make_vector, first, rest, nth
+    cons, concat, make_vector, is_vector, make_vector_vargs,
+    first, rest, nth,
+    is_nil, is_true, is_false, make_keyword, is_keyword,
+    is_hashmap, keys, values, contains, get,
+    make_hashmap_vargs, assoc, dissoc,
 )
 
 
@@ -38,6 +42,10 @@ def equal(op1, op2):
         return all(
             equal(el1, el2) for (el1, el2) in zip(op1, op2)
         )
+    if is_hashmap(op1) and is_hashmap(op2):
+        if set(keys(op1)) != set(keys(op2)):
+            return False
+        return all(equal(op1[key], op2[key]) for key in keys(op1))
     return type(op1) == type(op2) and op1 == op2
 
 
@@ -79,6 +87,24 @@ namespace_ = {
     'first': first,
     'rest': rest,
     'nth': nth,
+    'nil?': is_nil,
+    'true?': is_true,
+    'false?': is_false,
+    'symbol': make_symbol,
+    'symbol?': is_symbol,
+    'keyword': make_keyword,
+    'keyword?': is_keyword,
+    'vector': make_vector_vargs,
+    'vector?': is_vector,
+    'sequential?': is_iterable,
+    'hash-map': make_hashmap_vargs,
+    'map?': is_hashmap,
+    'get': get,
+    'keys': keys,
+    'vals': values,
+    'contains?': contains,
+    'assoc': assoc,
+    'dissoc': dissoc,
 }
 
 namespace = {make_symbol(k): v for k, v in namespace_.items()}

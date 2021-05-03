@@ -13,11 +13,16 @@ from mal_types import (
     is_bool,
     TRUE,
     FALSE,
+    MalException,
 )
 
 
 def pr_str(entity, print_readably=True):
-    if is_function(entity):
+    if isinstance(entity, MalException):
+        return f'{pr_str(entity.value)}'
+    if isinstance(entity, Exception):
+        return entity.args[0]
+    elif is_function(entity):
         return '#function'
     elif is_nil(entity):
         return 'nil'
@@ -31,7 +36,7 @@ def pr_str(entity, print_readably=True):
     elif is_symbol(entity):
         return str(entity, 'utf-8')
     elif is_keyword(entity):
-        return entity[1:]
+        return ':' + entity[1:]
     elif is_string(entity):
         if print_readably:
             return '"' + entity.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n') + '"'

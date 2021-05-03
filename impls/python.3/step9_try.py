@@ -7,8 +7,9 @@ from mal_types import (
     is_hashmap, make_hashmap_from_pydict, items,
     is_list, make_list, is_empty,
     is_symbol, make_symbol,
-    first, rest, FALSE, is_nil, is_false,
-    make_function, is_mal_function, NIL
+    first, rest, FALSE, is_nil, is_bool,
+    make_function, is_mal_function, NIL, is_iterable,
+    MalException,
 )
 from env import Env
 from core import namespace
@@ -97,7 +98,7 @@ def EVAL(ast, env):
             false_branch = first(rest(rest(elements)))
             condition = EVAL(condition, env)
             # empty lists, strings and 0 are 'truthy', only false and nil are 'falsy'
-            if is_nil(condition) or is_false(condition):
+            if is_nil(condition) or is_bool(condition) and condition == FALSE:
                 ast = false_branch
             else:
                 ast = true_branch
@@ -150,6 +151,18 @@ def EVAL(ast, env):
 
         elif ast[0] == make_symbol('macroexpand'):
             return macroexpand(ast[1], env)
+
+        elif ast[0] == make_symbol('try*'):
+            try:
+                op, try_branch, catch = ast
+            except ValueError:
+                op, try_branch = ast
+                return EVAL(try_branch, env)
+            try:
+                return EVAL(try_branch, env)
+            except Exception as exc:
+                catch_symbol, exception_symbol, catch_branch = catch
+                return EVAL(catch_branch, Env(env, [exception_symbol], [exc]))
 
         func, *args = eval_ast(ast, env)
         if not is_mal_function(func):
@@ -211,6 +224,35 @@ def macroexpand(ast, env):
     return ast
 
 
+def throw(exc):
+    raise MalException(exc)
+
+
+def mal_map(fn, mal_iter):
+    if is_mal_function(fn):
+        fn = fn.fn
+    return make_list(map(fn, mal_iter))
+
+
+def _flatten(args):
+    concatenated = []
+    for elt in args:
+        if is_iterable(elt) and not is_empty(elt):
+            concatenated += elt
+        else:
+            concatenated.append(elt)
+    if len(args) == 1:
+        return args[0]
+    return make_list(concatenated)
+
+
+def apply_(fn, *args):
+    if is_mal_function(fn):
+        fn = fn.fn
+    args = _flatten(args)
+    return fn(*args)
+
+
 def rep(arg):
     return PRINT(EVAL(READ(arg), repl_env))
 
@@ -220,6 +262,9 @@ repl_env.set(make_symbol('eval'), eval_)
 rep("(def! not (fn* (a) (if a false true)))")
 rep("""(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))""")
 rep("""(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw \"odd number of forms to cond\")) (cons 'cond (rest (rest xs)))))))""")  # noqa
+repl_env.set(make_symbol('apply'), apply_)
+repl_env.set(make_symbol('map'), mal_map)
+repl_env.set(make_symbol('throw'), throw)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--interactive', action='store_true')
@@ -240,7 +285,9 @@ if __name__ == '__main__':
         inp = input('user> ')
         try:
             res = rep(inp)
-        except Exception as e:
-            print(e)
+        except MalException as e:
+            print("Error:", pr_str(e))
+        except Exception as e:  # compatibility
+            print("Error:", e)
         else:
             print(res)
