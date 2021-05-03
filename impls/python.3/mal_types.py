@@ -38,8 +38,8 @@ TRUE = True
 FALSE = False
 is_bool = lambda entity: isinstance(entity, bool)
 
-function = namedtuple('MalFunction', 'ast params env fn')
-make_function = function
+function = namedtuple('MalFunction', 'ast params env fn is_macro')
+make_function = lambda ast, params, env, fn, is_macro=False: function(ast, params, env, fn, is_macro)
 is_mal_function = lambda entity: isinstance(entity, function)
 is_function = lambda entity: callable(entity) or is_mal_function(entity)
 
@@ -103,6 +103,12 @@ def rest(entity):
     if is_iterable(entity) and entity:
         return list(entity[1:])
     return []
+
+
+def nth(entity, n):
+    if is_iterable(entity) and len(entity) > n:
+        return entity[n]
+    return NIL
 
 
 def count(entity):
