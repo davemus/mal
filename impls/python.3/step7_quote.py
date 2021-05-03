@@ -106,7 +106,7 @@ def EVAL(ast, env):
                 except ValueError:
                     raise RuntimeError(
                         'Error: function is called with wrong number of parameters'
-                        f'expected: {len(binds.value)}, actual: {len(arguments)}'
+                        f'expected: {len(binds)}, actual: {len(arguments)}'
                     )
                 return EVAL(body, new_env)
 
@@ -117,6 +117,14 @@ def EVAL(ast, env):
             for expr in exprs[:-1]:
                 EVAL(expr, env)
             ast = exprs[-1]
+            continue
+
+        # quoting element
+        elif ast[0] == make_symbol('quote'):
+            return ast[1]
+
+        elif ast[0] == make_symbol('quasiquote'):
+            ast = quasiquote(ast[1])
             continue
 
         func, *args = eval_ast(ast, env)
@@ -136,6 +144,27 @@ def PRINT(mal_type):
 
 def eval_(ast):
     return EVAL(ast, repl_env)
+
+
+def quasiquote(ast):
+    if is_list(ast):
+        if is_empty(ast):
+            return ast
+        if ast[0] == make_symbol('unquote'):
+            return ast[1]
+        else:
+            processed = []
+            for elt in ast[::-1]:
+                if is_list(elt) and not is_empty(elt) and elt[0] == make_symbol('splice-unquote'):
+                    processed = [make_symbol('concat'), elt[1], processed]
+                else:
+                    processed = [make_symbol('cons'), quasiquote(elt), processed]
+            return make_list(processed)
+    elif is_vector(ast):
+        return make_list([make_symbol('vec'), *ast])
+    elif is_symbol(ast) or is_hashmap(ast):
+        return make_list([make_symbol('quote'), ast])
+    return ast
 
 
 def rep(arg):

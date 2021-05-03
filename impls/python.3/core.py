@@ -7,7 +7,7 @@ from mal_types import (
     make_list, is_list, NIL, is_empty, count,
     is_iterable, make_symbol,
     make_atom, is_atom, deref, swap, reset,
-    cons, concat
+    cons, concat, make_vector
 )
 
 
@@ -48,6 +48,10 @@ def slurp(filename):
     return contents
 
 
+def vec(*args):
+    return make_vector(args)
+
+
 namespace_ = {
     '+': add,
     '-': sub,
@@ -75,6 +79,7 @@ namespace_ = {
     'reset!': reset,
     'cons': cons,
     'concat': concat,
+    'vec': vec,
 }
 
 namespace = {make_symbol(k): v for k, v in namespace_.items()}
