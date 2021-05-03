@@ -159,7 +159,7 @@ if __name__ == '__main__':
     rep(f'(def! *ARGV* {"(list " +  " ".join(arg_to_str(arg) for arg in args.prog_args) + ")" })')
     if args.filename is not None:
         rep(f'(def! *FILENAME* "{args.filename}")')
-        print(rep('(load-file *FILENAME*)'))
+        rep('(load-file *FILENAME*)')
         if not args.interactive:
             exit(0)
     while True:

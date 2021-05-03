@@ -5,15 +5,15 @@ from mal_types import (
     is_vector, make_vector,
     is_hashmap, make_hashmap_from_pydict, items,
     is_list, make_list, is_empty, iterate,
-    is_symbol,
+    is_symbol, make_symbol,
 )
 
 
 repl_env = {
-    '+': lambda a, b: a + b,
-    '-': lambda a, b: a - b,
-    '*': lambda a, b: a * b,
-    '/': lambda a, b: a / b
+    make_symbol('+'): lambda a, b: a + b,
+    make_symbol('-'): lambda a, b: a - b,
+    make_symbol('*'): lambda a, b: a * b,
+    make_symbol('/'): lambda a, b: a / b
 }
 
 

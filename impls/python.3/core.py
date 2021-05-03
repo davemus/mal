@@ -45,7 +45,6 @@ def slurp(filename):
     strip_comments = lambda line: line.split(';')[0]
     with open(filename) as f:
         contents = ' '.join(strip_comments(line) for line in f if line)
-    print(contents)
     return contents
 
 

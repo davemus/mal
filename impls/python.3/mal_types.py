@@ -25,7 +25,7 @@ make_list = list
 is_list = lambda entity: isinstance(entity, list) and not is_atom(entity)
 
 make_vector = tuple
-is_vector = lambda entity: isinstance(entity, tuple) and not isinstance(entity, namedtuple)
+is_vector = lambda entity: isinstance(entity, tuple) and not isinstance(entity, function)
 
 make_hashmap = lambda iterable: dict(zip(iterable[0::2], iterable[1::2]))
 make_hashmap_from_pydict = lambda x: x

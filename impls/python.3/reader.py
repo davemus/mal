@@ -21,7 +21,7 @@ class Reader:
 
     def _check_position(self):
         if self._position >= len(self._tokens):
-            raise StopIteration('Input/output error')
+            raise StopIteration('EOF')
 
     def peek(self):
         self._check_position()
@@ -37,10 +37,7 @@ class Reader:
 def read_str(arg):
     tokens = tokenize(arg)
     reader = Reader(tokens)
-    try:
-        return read_form(reader)
-    except (StopIteration, RuntimeError):
-        raise RuntimeError('unbalanced input')
+    return read_form(reader)
 
 
 def tokenize(arg):
@@ -110,7 +107,7 @@ def read_atom(reader):
     elif token.startswith('"'):
         # this makes tests pass, but is not a real solution. Example: "\\"
         if not token.endswith(r'"') or len(token) == 1:
-            raise RuntimeError('Input/output error')
+            raise RuntimeError('EOF')
         return make_string(token)
     elif token.startswith(':'):
         return make_keyword(token)
