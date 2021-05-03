@@ -3,7 +3,15 @@ make_number = lambda str_: float(str_) if float(str_) != int(str_) else int(str_
 is_number = lambda entity: isinstance(entity, (int, float))
 
 def make_string(str_):
-    return str_[1:-1].replace('\\n', '\n').replace('\\"', '"')
+    return (
+        str_[1:-1]
+        # that hack I saw in impl/python. I was desperate to complete step4
+        # cause I was stopped on it for 5+ days. I have only 7 incomplete tests so far
+        .replace('\\\\', u'\u029e')
+        .replace('\\n', '\n')
+        .replace('\\"', '"')
+        .replace(u'\u029e', '\\')
+    )
 is_string = lambda entity: isinstance(entity, str)
 
 make_keyword = lambda str_: u"\u029e" + str(str_)

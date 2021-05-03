@@ -32,7 +32,7 @@ def pr_str(entity, print_readably=True):
         return entity[1:]
     elif is_string(entity):
         if print_readably:
-            return '"' + entity.replace('\n', '\\n').replace('\"', '\\\"') + '"'
+            return '"' + entity.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n') + '"'
         return entity
     elif is_list(entity):
         return '(' + ' '.join(pr_str(inner, print_readably) for inner in entity) + ')'
