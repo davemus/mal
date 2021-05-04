@@ -11,7 +11,13 @@ is_true = lambda entity: entity is TRUE
 is_false = lambda entity: entity is FALSE
 
 
-make_number = lambda str_: float(str_) if float(str_) != int(str_) else int(str_)
+def make_number(str_):
+    try:
+        if float(str_) != int(str_):
+            return float(str_)
+        return int(str_)
+    except Exception:
+        return float(str_)
 is_number = lambda entity: isinstance(entity, (int, float)) and not is_bool(entity)
 
 make_keyword = lambda str_: str_ if is_keyword(str_) else u"\u029e" + str(str_.lstrip(':'))
