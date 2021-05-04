@@ -1,3 +1,4 @@
+from time import time
 from operator import (
     add, sub, mul, truediv, lt, le, gt, ge
 )
@@ -117,8 +118,8 @@ namespace_ = {
     'assoc': assoc,
     'dissoc': dissoc,
     'readline': mal_readline,
-    '*host-language*': make_string("\"python-mal\""),
-    'time-ms': stub,
+    '*host-language*': make_string("\"python-by-davemus\""),
+    'time-ms': lambda: time() / 1000,
     'meta': stub,
     'with-meta': stub,
     'fn?': stub,
