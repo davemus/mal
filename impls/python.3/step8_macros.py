@@ -180,9 +180,9 @@ def quasiquote(ast):
             processed = []
             for elt in ast[::-1]:
                 if is_list(elt) and not is_empty(elt) and elt[0] == make_symbol('splice-unquote'):
-                    processed = [make_symbol('concat'), elt[1], processed]
+                    processed = make_list([make_symbol('concat'), elt[1], processed])
                 else:
-                    processed = [make_symbol('cons'), quasiquote(elt), processed]
+                    processed = make_list([make_symbol('cons'), quasiquote(elt), processed])
             return make_list(processed)
     elif is_vector(ast):
         return make_list([make_symbol('vec'), *ast])

@@ -20,28 +20,6 @@ is_keyword = lambda entity: isinstance(entity, str) and entity.startswith(u"\u02
 make_symbol = lambda str_: bytes(str_, encoding='utf-8')
 is_symbol = lambda entity: isinstance(entity, bytes)
 
-# compound types
-make_list = list
-is_list = lambda entity: isinstance(entity, list) and not is_atom(entity)
-
-make_vector = tuple
-make_vector_vargs = lambda *args: make_vector(args)
-is_vector = lambda entity: isinstance(entity, tuple) and not isinstance(entity, function)
-
-make_hashmap = lambda iterable: dict(zip(iterable[0::2], iterable[1::2]))
-make_hashmap_vargs = lambda *args: make_hashmap(args)
-make_hashmap_from_pydict = lambda x: x
-is_hashmap = lambda entity: isinstance(entity, dict)
-keys = lambda entity: make_list(entity.keys())
-values = lambda entity: make_list(entity.values())
-get = lambda entity, key: entity.get(key, NIL) if is_hashmap(entity) else NIL
-contains = lambda hashmap, key: key in hashmap.keys()
-def assoc(hashmap, *items):  # noqa
-    return make_hashmap_from_pydict({**hashmap, **{k: v for k, v in zip(items[0::2], items[1::2])}})
-def dissoc(hashmap, *items):  # noqa
-    return make_hashmap_from_pydict({k: v for k, v in hashmap.items() if k not in items})
-
-
 NIL = None
 is_nil = lambda entity: entity is NIL
 
@@ -51,7 +29,36 @@ is_bool = lambda entity: isinstance(entity, bool)
 is_true = lambda entity: entity is TRUE
 is_false = lambda entity: entity is FALSE
 
-function = namedtuple('MalFunction', 'ast params env fn is_macro')
+
+class MalWithMetaMixin:
+    __meta__ = NIL
+
+
+# compound types
+class MalList(list, MalWithMetaMixin): pass  # noqa
+make_list = lambda entity: MalList(entity)  # noqa
+is_list = lambda entity: isinstance(entity, MalList) and not is_atom(entity)
+
+class MalVector(tuple, MalWithMetaMixin): pass  # noqa
+make_vector = lambda entity: MalVector(entity)  # noqa
+make_vector_vargs = lambda *args: make_vector(args)
+is_vector = lambda entity: isinstance(entity, MalVector)
+
+class MalHashmap(dict, MalWithMetaMixin): pass  # noqa
+make_hashmap = lambda iterable: MalHashmap(zip(iterable[0::2], iterable[1::2]))  # noqa
+make_hashmap_vargs = lambda *args: make_hashmap(args)
+make_hashmap_from_pydict = lambda x: MalHashmap(x)
+is_hashmap = lambda entity: isinstance(entity, MalHashmap)
+keys = lambda entity: make_list(entity.keys())
+values = lambda entity: make_list(entity.values())
+get = lambda entity, key: entity.get(key, NIL) if is_hashmap(entity) else NIL
+contains = lambda hashmap, key: key in hashmap.keys()
+def assoc(hashmap, *items):  # noqa
+    return make_hashmap_from_pydict({**hashmap, **{k: v for k, v in zip(items[0::2], items[1::2])}})
+def dissoc(hashmap, *items):  # noqa
+    return make_hashmap_from_pydict({k: v for k, v in hashmap.items() if k not in items})
+
+function = namedtuple('MalFunction', 'ast params env fn is_macro')  # noqa
 make_function = lambda ast, params, env, fn, is_macro=False: function(ast, params, env, fn, is_macro)
 is_mal_function = lambda entity: isinstance(entity, function)
 is_function = lambda entity: callable(entity) or is_mal_function(entity)
@@ -114,8 +121,8 @@ def first(entity):
 
 def rest(entity):
     if is_iterable(entity) and entity:
-        return list(entity[1:])
-    return []
+        return make_list(entity[1:])
+    return make_list([])
 
 
 def nth(entity, n):
@@ -146,4 +153,4 @@ def concat(*sequences):
 
 def init_save_value(self, value):
     self.value = value
-MalException = type('MalException', (Exception,), {'__init__': init_save_value})
+MalException = type('MalException', (Exception,), {'__init__': init_save_value})  # noqa
