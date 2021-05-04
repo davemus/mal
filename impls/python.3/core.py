@@ -13,6 +13,8 @@ from mal_types import (
     is_nil, is_true, is_false, make_keyword, is_keyword,
     is_hashmap, keys, values, contains, get,
     make_hashmap_vargs, assoc, dissoc, make_string,
+    is_string, is_function, is_number, is_mal_function,
+    make_hashmap_from_pydict, make_number,
 )
 
 
@@ -68,6 +70,41 @@ def stub(*args):
     raise NotImplementedError('Stub')
 
 
+def seq(entity):
+    if (
+        is_iterable(entity)
+        or is_string(entity)
+        and entity
+    ):
+        return make_list(entity)
+    return NIL
+
+
+def conj(collection, *args):
+    if is_list(collection):
+        return make_list([*reversed(args), *collection])
+    if is_vector(collection):
+        return make_vector([*collection, *args])
+    raise TypeError('conj element 1 should be a collection')
+
+
+def py_eval(expression):
+    result = eval(expression)
+    if isinstance(result, (tuple, list)):
+        return make_list(result)
+    elif isinstance(result, str):
+        return result
+    elif isinstance(result, bool):
+        return result
+    elif isinstance(result, dict):
+        return make_hashmap_from_pydict(result)
+    elif isinstance(result, (int, float)):
+        return make_number(result)
+    elif result is None:
+        return NIL
+    raise TypeError(f'Can\'t convert python type {type(result)} to mal type')
+
+
 namespace_ = {
     '+': add,
     '-': sub,
@@ -120,13 +157,16 @@ namespace_ = {
     'readline': mal_readline,
     '*host-language*': make_string("\"python-by-davemus\""),
     'time-ms': lambda: time() / 1000,
+    # metadata is not supported in my mal implementation
     'meta': stub,
     'with-meta': stub,
-    'fn?': stub,
-    'string?': stub,
-    'number?': stub,
-    'seq': stub,
-    'conj': stub,
+    'fn?': is_function,
+    'macro?': lambda entity: is_mal_function(entity) and entity.is_macro,
+    'string?': is_string,
+    'number?': is_number,
+    'seq': seq,
+    'conj': conj,
+    'py-eval': py_eval,
 }
 
 namespace = {make_symbol(k): v for k, v in namespace_.items()}
