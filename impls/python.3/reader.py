@@ -10,6 +10,7 @@ from mal_types import (
     NIL,
     TRUE,
     FALSE,
+    MalException,
 )
 
 
@@ -21,7 +22,7 @@ class Reader:
 
     def _check_position(self):
         if self._position >= len(self._tokens):
-            raise StopIteration('EOF')
+            raise MalException('EOF')
 
     def peek(self):
         self._check_position()
@@ -94,6 +95,16 @@ def read_list(reader, sequential):
         list_.append(read_form(reader))
 
 
+def valid_string(token):
+    transformed = token.replace('\\\\', '').replace('\\n', '').replace('\\"', '')
+    return (
+        transformed.startswith('"')
+        and transformed.endswith('"')
+        and len(transformed) != 1
+        and '\\' not in transformed
+    )
+
+
 def read_atom(reader):
     token = reader.next()
     if token == 'nil':
@@ -105,12 +116,11 @@ def read_atom(reader):
     elif re.match(r'-?\d+\.*\d*', token):
         return make_number(token)
     elif token.startswith('"'):
-        # this makes tests pass, but is not a real solution. Example: "\\"
-        if not token.endswith(r'"') or len(token) == 1:
-            raise RuntimeError('EOF')
+        if not valid_string(token):
+            raise MalException('EOF')
         return make_string(token)
     elif token.startswith(':'):
         return make_keyword(token)
     elif re.match(r'.*', token):
         return make_symbol(token)
-    raise RuntimeError('Input/output error')
+    raise MalException('Input/output error')

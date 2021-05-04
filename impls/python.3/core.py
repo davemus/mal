@@ -64,7 +64,7 @@ def mal_readline(prompt):
 
 
 def stub(*args):
-    raise NotImplementedError()
+    raise NotImplementedError('Stub')
 
 
 namespace_ = {
