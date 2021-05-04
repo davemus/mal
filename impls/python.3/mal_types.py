@@ -1,25 +1,6 @@
-from collections import namedtuple
+from copy import copy
 
 # atomic types
-make_number = lambda str_: float(str_) if float(str_) != int(str_) else int(str_)
-is_number = lambda entity: isinstance(entity, (int, float))
-
-def make_string(str_):  # noqa
-    return (
-        str_[1:-1]
-        .replace('\\\\', u'\u029e')
-        .replace('\\n', '\n')
-        .replace('\\"', '"')
-        .replace(u'\u029e', '\\')
-    )
-is_string = lambda entity: isinstance(entity, str)  # noqa
-
-make_keyword = lambda str_: str_ if is_keyword(str_) else u"\u029e" + str(str_.lstrip(':'))
-is_keyword = lambda entity: isinstance(entity, str) and entity.startswith(u"\u029e")
-
-make_symbol = lambda str_: bytes(str_, encoding='utf-8')
-is_symbol = lambda entity: isinstance(entity, bytes)
-
 NIL = None
 is_nil = lambda entity: entity is NIL
 
@@ -30,8 +11,29 @@ is_true = lambda entity: entity is TRUE
 is_false = lambda entity: entity is FALSE
 
 
+make_number = lambda str_: float(str_) if float(str_) != int(str_) else int(str_)
+is_number = lambda entity: isinstance(entity, (int, float)) and not is_bool(entity)
+
+make_keyword = lambda str_: str_ if is_keyword(str_) else u"\u029e" + str(str_.lstrip(':'))
+is_keyword = lambda entity: isinstance(entity, str) and entity.startswith(u"\u029e")
+
+def make_string(str_):  # noqa
+    return (
+        str_[1:-1]
+        .replace('\\\\', u'\u029e')
+        .replace('\\n', '\n')
+        .replace('\\"', '"')
+        .replace(u'\u029e', '\\')
+    )
+is_string = lambda entity: isinstance(entity, str) and not is_keyword(entity)  # noqa
+
+make_symbol = lambda str_: bytes(str_, encoding='utf-8')
+is_symbol = lambda entity: isinstance(entity, bytes)
+
+
 class MalWithMetaMixin:
-    __meta__ = NIL
+    meta = NIL
+can_have_metadata = lambda entity: isinstance(entity, MalWithMetaMixin) or is_function(entity)  # noqa
 
 
 # compound types
@@ -58,8 +60,29 @@ def assoc(hashmap, *items):  # noqa
 def dissoc(hashmap, *items):  # noqa
     return make_hashmap_from_pydict({k: v for k, v in hashmap.items() if k not in items})
 
-function = namedtuple('MalFunction', 'ast params env fn is_macro')  # noqa
-make_function = lambda ast, params, env, fn, is_macro=False: function(ast, params, env, fn, is_macro)
+
+class function(MalWithMetaMixin):
+    __slots__ = ['ast', 'params', 'env', 'fn', 'is_macro', 'meta']
+
+    def __copy__(self):
+        copy_fn = function(
+            copy(self.ast),
+            copy(self.params),
+            copy(self.env),
+            copy(self.fn),
+            copy(self.is_macro),
+        )
+        copy_fn.meta = copy(self.meta)
+        return copy_fn
+
+    def __init__(self, ast, params, env, fn, is_macro=False):
+        self.ast = ast
+        self.params = params
+        self.env = env
+        self.fn = fn
+        self.is_macro = is_macro
+        self.meta = NIL
+make_function = function  # noqa
 is_mal_function = lambda entity: isinstance(entity, function)
 is_function = lambda entity: callable(entity) or is_mal_function(entity)
 

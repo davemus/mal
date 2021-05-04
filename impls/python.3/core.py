@@ -1,3 +1,4 @@
+from copy import copy
 from time import time
 from operator import (
     add, sub, mul, truediv, lt, le, gt, ge
@@ -14,7 +15,7 @@ from mal_types import (
     is_hashmap, keys, values, contains, get,
     make_hashmap_vargs, assoc, dissoc, make_string,
     is_string, is_function, is_number, is_mal_function,
-    make_hashmap_from_pydict, make_number,
+    make_hashmap_from_pydict, make_number, can_have_metadata,
 )
 
 
@@ -66,15 +67,10 @@ def mal_readline(prompt):
         return NIL
 
 
-def stub(*args):
-    raise NotImplementedError('Stub')
-
-
 def seq(entity):
     if (
-        is_iterable(entity)
-        or is_string(entity)
-        and entity
+        (is_iterable(entity) or is_string(entity))
+        and len(entity)
     ):
         return make_list(entity)
     return NIL
@@ -103,6 +99,27 @@ def py_eval(expression):
     elif result is None:
         return NIL
     raise TypeError(f'Can\'t convert python type {type(result)} to mal type')
+
+
+def meta(element):
+    if not can_have_metadata(element):
+        raise TypeError(f'Type {type(element)} can\'t have meta')
+    try:
+        return element.meta
+    except AttributeError:
+        return NIL
+
+
+def with_meta(target, metadata):
+    if not can_have_metadata(target):
+        raise TypeError(f'Type {type(target)} can\'t have meta')
+    target_copy = copy(target)
+    try:
+        target_copy.meta = metadata
+    except AttributeError:
+        return target
+    else:
+        return target_copy
 
 
 namespace_ = {
@@ -158,9 +175,9 @@ namespace_ = {
     '*host-language*': make_string("\"python-by-davemus\""),
     'time-ms': lambda: time() / 1000,
     # metadata is not supported in my mal implementation
-    'meta': stub,
-    'with-meta': stub,
-    'fn?': is_function,
+    'meta': meta,
+    'with-meta': with_meta,
+    'fn?': lambda entity: is_function(entity) or (is_mal_function(entity) and not entity.is_macro),
     'macro?': lambda entity: is_mal_function(entity) and entity.is_macro,
     'string?': is_string,
     'number?': is_number,
